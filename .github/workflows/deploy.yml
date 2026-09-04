@@ -22,6 +22,11 @@ jobs:
       - name: Build
         run: node .build/build.mjs
 
+      - name: Verify
+        run: |
+          node .build/check.mjs
+          node .build/verify-groups.mjs
+
       - name: Prepare
         run: |
           mkdir -p _deploy
