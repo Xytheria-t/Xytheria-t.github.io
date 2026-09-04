@@ -1701,7 +1701,9 @@ function bindAnchors(){
     a.onclick=function(e){
       e.preventDefault();
       const url=location.origin+location.pathname+'#'+h.id;
-      history.replaceState(null,null,url);
+      // 只改 URL 不动 state：replaceState(null,…) 会清掉 {slug,vi}，导致侧键后退时
+      // popstate 拿不到栈下标、退化成 indexOf（重复访问同一篇会定位错页）
+      history.replaceState(history.state, '', url);
       navigator.clipboard.writeText(url).catch(function(){});
       a.textContent='✓'; setTimeout(function(){a.textContent='#';},900);
     };
@@ -1752,8 +1754,10 @@ let _transTimer = 0;
 function transitionTo(slug){
   const n=NOTES[slug]; if(!n) return;
   recentPush(slug); // ponytail: localStorage['vinea.recent'] feeds the wall .recent dot
-  // 用 replaceState 保持 URL 与当前渲染笔记同步；在 file:// 下失败则回退到 location.hash
-  try{ window.history.replaceState({slug:slug},'', '#'+slug); }catch(e){ location.hash = slug; }
+  // vi = 当前 Vinea 栈下标，随 state 一起入历史 —— popstate 靠它精确定位，不用 indexOf 猜
+  // （同一篇可能被重复访问，indexOf 只会命中第一次出现的位置 → 后退会跳过中间直接回到很早的页）
+  try{ window.history.replaceState({slug:slug, vi:idx},'', '#'+slug); }
+  catch(e){ location.hash = slug; } // file:// 下失败则回退到 location.hash
   try{ localStorage.setItem('vinea:last', slug); }catch(e){} // ponytail: raw slug (no %-encoding) survives reload even when hash fragment is stripped
     pop.classList.remove('on');
   stage.style.opacity='0'; stage.style.transform='scale(1.03)'; stage.style.filter='blur(10px)';
@@ -1789,7 +1793,7 @@ function go(slug){
   if(!NOTES[slug] || hist[idx]===slug) return; // 防重复入栈
   leave();
   hist=hist.slice(0,idx+1); hist.push(slug); idx++;
-  try{ window.history.pushState({slug:slug},'', '#'+slug); }
+  try{ window.history.pushState({slug:slug, vi:idx},'', '#'+slug); }
   catch(e){ location.hash = slug; } // file:// 下 pushState 可能抛，退回 hash
   transitionTo(slug); // transitionTo 内 replaceState 仅同步 URL，不再入栈
 }
@@ -1818,7 +1822,9 @@ document.addEventListener('mousedown', function(e){
 window.addEventListener('popstate', function(e){
   const slug = (e.state && e.state.slug) ? e.state.slug : _decodeHash();
   if(!slug || !NOTES[slug]) return;
-  const i = hist.indexOf(slug);
+  // 定位优先用 state.vi（入历史时记下的栈下标，精确）；缺失或越界才退化到 indexOf
+  let i = (e.state && typeof e.state.vi === 'number') ? e.state.vi : -1;
+  if(i < 0 || i >= hist.length || hist[i] !== slug) i = hist.indexOf(slug);
   if(i === -1 || i === idx) return; // 不在栈内 / 已在当前页 → 忽略
   const dir = i < idx ? -1 : 1;
   leave(); idx = i;
