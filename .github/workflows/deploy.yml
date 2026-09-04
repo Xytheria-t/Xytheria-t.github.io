@@ -17,3 +17,8 @@ jobs:
           cache-dependency-path: .build/package-lock.json
 
       - run: echo "step 1 OK"
+
+      - name: Install
+        run: npm ci --prefix .build
+
+      - run: echo "step 2 OK"
