@@ -1,0 +1,66 @@
+name: Deploy Vinea to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    # 触发：notes/ 与 .build/ 改动才部署；纯文档/记忆改动不浪费构建额度
+    paths:
+      - 'notes/**'
+      - '.build/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:  # 允许手动触发（排查时用）
+
+# 同一时刻只允许一个部署跑（前一个没完就跳过，避免 gh-pages 推送竞态）
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: write  # 需要 push gh-pages 分支
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: '.build/package-lock.json'
+
+      - name: Install build dependencies
+        working-directory: .build
+        run: npm ci
+
+      - name: Build reader.html
+        working-directory: .build
+        # 让 build.mjs 找到 .build/../notes
+        run: node .build/build.mjs
+
+      - name: Verify build
+        working-directory: .build
+        # 部署前再跑一次 verify，挂了别发出去
+        run: |
+          node .build/check.mjs
+          node .build/verify-groups.mjs
+
+      - name: Prepare deploy artifact
+        run: |
+          mkdir -p _deploy
+          cp reader.html _deploy/
+          cp -r vendor _deploy/ 2>/dev/null || true
+          cp -r notes _deploy/ 2>/dev/null || true
+          # PITFALLS：避免 GitHub Pages 走 Jekyll 渲染（Vinea 是纯静态无模板）
+          touch _deploy/.nojekyll
+
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_deploy
+          # 强制推送（gh-pages 是 build 产物，跟 main 分支历史无关）
+          force_orphan: true
+          # 不用自动建 commit message 模板，简洁即可
+          commit_message: deploy: ${{ github.event.head_commit.message }}
