@@ -4,7 +4,6 @@
 
 # 依赖 & 大型本地副本
 /.build/node_modules/
-/.build/mermaid.min.js
 /.build/_trash/
 
 # 习录迁出 Vinea（独立存放在 D:\Tool\Time\time.html）
