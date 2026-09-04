@@ -1782,12 +1782,16 @@ function jumpTo(y){
   de.style.scrollBehavior = sb;
 }
 
-// 单一来源：JS 栈 hist/idx。侧键直接驱动栈，不碰浏览器历史，杜绝双导航/idx 错乱。
+// 导航驱动源 = 浏览器历史栈（Vinea 内部 hist[] 与其镜像同步）。
+// 原先只 replaceState 不入栈 → 浏览器历史永远 1 条 → 侧键后退退化成「切标签页」（JS 拦不住）。
+// 改：go() pushState 入历史，back/fwd 调 history.back/forward，渲染统一由 popstate 驱动，杜绝双导航。
 function go(slug){
   if(!NOTES[slug] || hist[idx]===slug) return; // 防重复入栈
   leave();
   hist=hist.slice(0,idx+1); hist.push(slug); idx++;
-  transitionTo(slug); // transitionTo 内 replaceState 仅同步 URL，不再 pushState
+  try{ window.history.pushState({slug:slug},'', '#'+slug); }
+  catch(e){ location.hash = slug; } // file:// 下 pushState 可能抛，退回 hash
+  transitionTo(slug); // transitionTo 内 replaceState 仅同步 URL，不再入栈
 }
 // 侧键导航视觉反馈：方向箭头 + 目标标题，短暂浮现
 let navHintT;
@@ -1798,8 +1802,10 @@ function showNavHint(dir, slug){
   clearTimeout(navHintT);
   navHintT=setTimeout(function(){ navHint.classList.remove('show'); }, 900);
 }
-function back(){ if(idx>0){ leave(); idx--; const t=hist[idx]; showNavHint(-1,t); transitionTo(t); } }
-function fwd(){ if(idx<hist.length-1){ leave(); idx++; const t=hist[idx]; showNavHint(1,t); transitionTo(t); } }
+// 交回浏览器历史：真正的渲染由 popstate 完成，这里只发指令（避免与 popstate 双导航）。
+// idx 边界守卫：Vinea 栈到底时既不 history.back() 也不让浏览器切标签（mousedown 已 preventDefault）。
+function back(){ if(idx>0){ try{ history.back(); }catch(e){} } }
+function fwd(){ if(idx<hist.length-1){ try{ history.forward(); }catch(e){} } }
 
 // 鼠标侧键 = 唯一导航入口：mousedown 单次触发，阻止原生 X1/X2 后退/前进。
 document.addEventListener('mousedown', function(e){
@@ -1807,12 +1813,17 @@ document.addEventListener('mousedown', function(e){
   else if(e.button===4){ e.preventDefault(); e.stopPropagation(); fwd(); }
 }, true);
 
-// 安全兜底：原生后退/前进（或 hash 变化）若落在栈内则对齐，否则忽略，绝不破坏栈。
+// 统一渲染入口：浏览器历史变化（侧键 / 浏览器前后退按钮 / 手改 hash）→ 对齐 Vinea 栈 + 渲染。
+// 边界：slug 不在 Vinea 栈内或已在当前页 → 直接 return，绝不破坏栈（原「安全兜底」语义保留）。
 window.addEventListener('popstate', function(e){
   const slug = (e.state && e.state.slug) ? e.state.slug : _decodeHash();
   if(!slug || !NOTES[slug]) return;
   const i = hist.indexOf(slug);
-  if(i !== -1 && i !== idx){ leave(); idx = i; transitionTo(slug); }
+  if(i === -1 || i === idx) return; // 不在栈内 / 已在当前页 → 忽略
+  const dir = i < idx ? -1 : 1;
+  leave(); idx = i;
+  showNavHint(dir, slug); // 方向由新旧 idx 推出，不用猜浏览器是前进还是后退
+  transitionTo(slug);
 });
 document.addEventListener('keydown',function(e){
   if(e.key==='Escape'){ go(ROOT_ID); return; }
