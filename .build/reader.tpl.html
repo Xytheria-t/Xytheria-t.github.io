@@ -1823,6 +1823,11 @@ document.addEventListener('keydown',function(e){
     return;
   }
 });
+/* 鼠标侧键：button 3=后退 4=前进 —— Vinea 历史栈前进/后退 */
+document.addEventListener('mousedown',function(e){
+  if(e.button===3){ e.preventDefault(); e.stopPropagation(); back(); }
+  else if(e.button===4){ e.preventDefault(); e.stopPropagation(); fwd(); }
+}, true);
 let _toastEl, _toastT;
 function toast(msg){
   if(!_toastEl){ _toastEl=document.createElement('div'); _toastEl.id='toast'; document.body.appendChild(_toastEl); }
