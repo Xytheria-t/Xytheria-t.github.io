@@ -2,7 +2,21 @@ name: Deploy Vinea
 
 on:
   push:
-    branches: [master]
+    branches: [master, main]
+    # 触发：notes/ 与 .build/ 改动才部署；纯文档/记忆改动不浪费构建额度
+    paths:
+      - 'notes/**'
+      - '.build/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:  # 允许手动触发（排查时用）
+
+# 同一时刻只允许一个部署跑（前一个没完就跳过，避免 gh-pages 推送竞态）
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: write  # 需要 push gh-pages 分支
 
 jobs:
   build:
@@ -16,22 +30,33 @@ jobs:
           cache: 'npm'
           cache-dependency-path: .build/package-lock.json
 
-      - run: echo "step 1 OK"
-
-      - name: Install
+      - name: Install build dependencies
         run: npm ci --prefix .build
 
-      - run: echo "step 2 OK"
-
-      - name: Build
+      - name: Build reader.html
+        # PITFALLS：build.mjs 自己 cd 到 Vinea 根读 notes/，所以 .build 目录下执行
         run: node .build/build.mjs
 
-      - run: echo "step 3 OK"
+      - name: Verify build
+        run: |
+          node .build/check.mjs
+          node .build/verify-groups.mjs
 
-      - name: Deploy
+      - name: Prepare deploy artifact
+        run: |
+          mkdir -p _deploy
+          cp reader.html _deploy/
+          cp -r vendor _deploy/
+          cp -r notes _deploy/
+          # PITFALLS：避免 GitHub Pages 走 Jekyll 渲染（Vinea 是纯静态无模板）
+          touch _deploy/.nojekyll
+
+      - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./vendor
+          publish_dir: ./_deploy
+          # 强制推送（gh-pages 是 build 产物，跟 master 分支历史无关）
           force_orphan: true
-          commit_message: test deploy
+          # 不用自动建 commit message 模板，简洁即可
+          commit_message: deploy: ${{ github.event.head_commit.message }}
