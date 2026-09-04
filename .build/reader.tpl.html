@@ -1788,7 +1788,7 @@ function jumpTo(y){
 
 // 导航驱动源 = 浏览器历史栈（Vinea 内部 hist[] 与其镜像同步）。
 // 原先只 replaceState 不入栈 → 浏览器历史永远 1 条 → 侧键后退退化成「切标签页」（JS 拦不住）。
-// 改：go() pushState 入历史，back/fwd 调 history.back/forward，渲染统一由 popstate 驱动，杜绝双导航。
+// 改：go() pushState 入历史，侧键/浏览器按钮交给原生导航，渲染统一由 popstate 驱动。
 function go(slug){
   if(!NOTES[slug] || hist[idx]===slug) return; // 防重复入栈
   leave();
@@ -1806,16 +1806,11 @@ function showNavHint(dir, slug){
   clearTimeout(navHintT);
   navHintT=setTimeout(function(){ navHint.classList.remove('show'); }, 900);
 }
-// 交回浏览器历史：真正的渲染由 popstate 完成，这里只发指令（避免与 popstate 双导航）。
-// idx 边界守卫：Vinea 栈到底时既不 history.back() 也不让浏览器切标签（mousedown 已 preventDefault）。
-function back(){ if(idx>0){ try{ history.back(); }catch(e){} } }
-function fwd(){ if(idx<hist.length-1){ try{ history.forward(); }catch(e){} } }
-
-// 鼠标侧键 = 唯一导航入口：mousedown 单次触发，阻止原生 X1/X2 后退/前进。
-document.addEventListener('mousedown', function(e){
-  if(e.button===3){ e.preventDefault(); e.stopPropagation(); back(); }
-  else if(e.button===4){ e.preventDefault(); e.stopPropagation(); fwd(); }
-}, true);
+// 不接管鼠标侧键：mousedown 里 preventDefault() 对 X1/X2 的拦截不可靠（浏览器/驱动差异），
+// 一旦没拦住就会出现「JS 调 history.back() + 浏览器再退一级」= 一次按键退两级。
+// 既然 go() 已 pushState（历史栈有内容），侧键完全交给浏览器原生导航，
+// Vinea 只通过下面的 popstate 渲染 —— 单一驱动源，不可能双导航。
+// （原 back()/fwd() 已无调用者，删；需要键盘/UI 入口时两行即可加回。）
 
 // 统一渲染入口：浏览器历史变化（侧键 / 浏览器前后退按钮 / 手改 hash）→ 对齐 Vinea 栈 + 渲染。
 // 边界：slug 不在 Vinea 栈内或已在当前页 → 直接 return，绝不破坏栈（原「安全兜底」语义保留）。
