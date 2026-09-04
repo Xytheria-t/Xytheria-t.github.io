@@ -2,7 +2,7 @@ name: Deploy Vinea to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [master, main]
     # 触发：notes/ 与 .build/ 改动才部署；纯文档/记忆改动不浪费构建额度
     paths:
       - 'notes/**'
