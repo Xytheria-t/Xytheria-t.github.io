@@ -22,3 +22,8 @@ jobs:
         run: npm ci --prefix .build
 
       - run: echo "step 2 OK"
+
+      - name: Build
+        run: node .build/build.mjs
+
+      - run: echo "step 3 OK"
