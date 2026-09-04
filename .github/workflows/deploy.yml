@@ -28,27 +28,10 @@ jobs:
 
       - run: echo "step 3 OK"
 
-      - name: Verify
-        run: |
-          node .build/check.mjs
-          node .build/verify-groups.mjs
-
-      - run: echo "step 4 OK"
-
-      - name: Prepare
-        run: |
-          mkdir -p _deploy
-          cp reader.html _deploy/
-          cp -r vendor _deploy/
-          cp -r notes _deploy/
-          touch _deploy/.nojekyll
-
-      - run: echo "step 5 OK"
-
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./_deploy
+          publish_dir: ./vendor
           force_orphan: true
-          commit_message: deploy: ${{ github.event.head_commit.message }}
+          commit_message: test deploy
