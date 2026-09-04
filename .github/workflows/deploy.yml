@@ -2,7 +2,12 @@ name: Deploy Vinea
 
 on:
   push:
-    branches: [master]
+    branches: [master, main]
+    # 触发：notes/ 与 .build/ 改动才部署；纯文档/记忆改动不浪费构建额度
+    paths:
+      - 'notes/**'
+      - '.build/**'
+      - '.github/workflows/deploy.yml'
 
 jobs:
   build:
@@ -31,6 +36,8 @@ jobs:
         run: |
           mkdir -p _deploy
           cp reader.html _deploy/
+          # GitHub Pages 用户站只认 index.html；首页软链到 reader.html
+          cp reader.html _deploy/index.html
           cp -r vendor _deploy/
           cp -r notes _deploy/
           touch _deploy/.nojekyll
