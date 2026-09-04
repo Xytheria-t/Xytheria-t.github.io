@@ -892,7 +892,6 @@ html{font-optical-sizing:auto}
   .ripple{display:none !important}
 }
 /* ---- interaction layer 样式（halo / ripple） ---- */
-/* ---- Ctrl+Alt+O 轻提示 ---- */
 #toast{position:fixed;left:50%;bottom:42px;transform:translateX(-50%) translateY(12px);
   background:#1f1b16ee;color:#f4ead6;padding:10px 18px;border-radius:10px;
   font:600 14px/1.4 Georgia,"Songti SC",serif;
@@ -1817,11 +1816,6 @@ window.addEventListener('popstate', function(e){
 });
 document.addEventListener('keydown',function(e){
   if(e.key==='Escape'){ go(ROOT_ID); return; }
-  if(e.ctrlKey && e.altKey && e.code==='KeyO'){ // Ctrl+Alt+O：定位当前笔记源文件
-    e.preventDefault();
-    openCurrentNoteFile();
-    return;
-  }
 });
 /* 鼠标侧键：button 3=后退 4=前进 —— Vinea 历史栈前进/后退 */
 document.addEventListener('mousedown',function(e){
@@ -1833,36 +1827,6 @@ function toast(msg){
   if(!_toastEl){ _toastEl=document.createElement('div'); _toastEl.id='toast'; document.body.appendChild(_toastEl); }
   _toastEl.textContent=msg; _toastEl.classList.add('on');
   clearTimeout(_toastT); _toastT=setTimeout(function(){ _toastEl.classList.remove('on'); }, 2400);
-}
-/* 浏览器沙箱禁止直接拉起 Explorer，故：复制绝对路径 + 在新标签打开 file:// 源文件做兜底 */
-function openCurrentNoteFile(){
-  const n=NOTES[hist[idx]];
-  if(!n || !n.file){ toast('当前页无源文件'); return; }
-  const u=new URL(n.file, location.href);
-  // URL.pathname 会把中文/空格 percent-encode（动态代理.md → %E5%8A%A8...），
-  // 直接复制得到的是乱码路径，粘进资源管理器打不开 —— 必须先 decode 再去掉首斜杠。
-  let abs;
-  try{ abs = decodeURIComponent(u.pathname).replace(/^\//,''); }
-  catch(e){ abs = u.pathname.replace(/^\//,''); } // 非法百分号序列时退回原始值，别整个崩掉
-  try{ navigator.clipboard.writeText(abs); }catch(e){}
-  // file:// 弹出经常被浏览器拦；用 <a download> 强制触发能保底
-  let opened = false;
-  try{
-    const w = window.open(u.href, '_blank');
-    opened = !!w;
-  }catch(e){}
-  if(!opened){
-    try{
-      const a = document.createElement('a');
-      a.href = u.href;
-      a.rel = 'noopener';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      opened = true;
-    }catch(e){}
-  }
-  toast(opened ? '已打开源文件 · 路径已复制' : '路径已复制 · 浏览器拦截了 file:// 打开，请手动粘贴');
 }
 cpPrev.onclick=function(){ jumpSection(-1); };
 cpNext.onclick=function(){ jumpSection(1); };
