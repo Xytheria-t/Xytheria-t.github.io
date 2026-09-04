@@ -8,7 +8,6 @@ on:
       - 'notes/**'
       - '.build/**'
       - '.github/workflows/deploy.yml'
-  workflow_dispatch:  # 允许手动触发（排查时用）
 
 # 同一时刻只允许一个部署跑（前一个没完就跳过，避免 gh-pages 推送竞态）
 concurrency:
