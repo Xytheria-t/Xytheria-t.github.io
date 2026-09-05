@@ -19,7 +19,7 @@ html,body{margin:0;min-height:100%}
 html{scroll-behavior:smooth;scrollbar-width:none}
 body{
   color:var(--ink); -webkit-font-smoothing:antialiased;
-  overflow-x:hidden;
+  overflow-x:hidden;-webkit-tap-highlight-color:transparent; /* 点按反馈交给 ripple，压掉系统高亮（桌面无感） */
   background:
     radial-gradient(1200px 600px at 85% -10%, color-mix(in srgb,var(--accent) 10%, transparent), transparent 62%),
     radial-gradient(900px 500px at -10% 110%, color-mix(in srgb,var(--accent) 6%, transparent), transparent 60%),
@@ -39,7 +39,7 @@ body::after{content:"";position:fixed;inset:0;z-index:1;pointer-events:none;opac
   background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 35%,#fff));
   transition:transform .12s linear,opacity .2s}
 /* stage */
-#stage{position:relative;z-index:2;min-height:100vh;padding:8vh 6vw 14vh;
+#stage{position:relative;z-index:2;min-height:100vh;min-height:100svh;padding:8vh 6vw 14vh;
   transition:opacity .42s var(--ease),transform .42s var(--ease),filter .42s var(--ease)}
 /* eyebrow — 栏目标签（扉页 / 卷首共用） */
 .eyebrow{font-family:var(--sans);font-size:10.5px;font-weight:600;letter-spacing:.24em;
@@ -153,6 +153,13 @@ body::after{content:"";position:fixed;inset:0;z-index:1;pointer-events:none;opac
   .cover{grid-template-columns:1fr}
   .cover-main{padding-left:10px}
   .cover-mosaic{width:100%;min-width:0}
+}
+/* 手机封面：期号行缩排去右签（375px 放不下两段 + .32em 字距），卷色带压矮一档 */
+@media (max-width:540px){
+  .cover-issue{font-size:9px;letter-spacing:.14em}
+  .cover-issue-r{display:none}
+  .cm-rail{height:32px}
+  .cm-num{font-size:12px}
 }
 /* ===== 卷目录带 — 4 版式词汇表（tiles/spread/feature/index；版式由 GROUP.layout 指定） =====
    领域条目 .ventry 共用一套 DOM，版式差异全部走 CSS，新卷缺省 tiles */
@@ -268,10 +275,12 @@ body::after{content:"";position:fixed;inset:0;z-index:1;pointer-events:none;opac
 .band--index .ventry:hover::after{opacity:0}
 @media (max-width:980px){
   .band--tiles .vbody,.band--feature .vbody{grid-template-columns:repeat(2,1fr)}
+  .band--spread .vbody{grid-template-columns:repeat(2,minmax(0,1fr))} /* 对开页 3 列在窄屏永不收敛 → 平板两列 */
 }
 @media (max-width:540px){
-  .band--tiles .vbody,.band--feature .vbody{grid-template-columns:1fr}
+  .band--tiles .vbody,.band--feature .vbody,.band--spread .vbody{grid-template-columns:1fr}
   .band--index .v-data{display:none}
+  .band--index .ventry{flex-wrap:wrap} /* 长标题 + cat 标签一行放不下时折行，不硬撑出横向溢出 */
 }
 /* ===== 子 MOC 墙：轻量扉页 + 统一 .ventry 网格（继承父卷色） ===== */
 .subhead{position:relative;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;
@@ -898,6 +907,39 @@ html{font-optical-sizing:auto}
   box-shadow:0 8px 30px rgba(0,0,0,.35);opacity:0;pointer-events:none;
   transition:opacity .2s,transform .2s;z-index:9999;max-width:80vw;text-align:center}
 #toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+/* ===== 手机端适配（≤540px）—— 只收留白与字号，交互语义与桌面一致；>540px 一律不受影响 ===== */
+@media (max-width:540px){
+  #stage{padding:5vh 5vw 12vh}
+  .art h2{font-size:22px;margin:2.6rem 0 1rem}
+  .art h3{font-size:18px;margin:2rem 0 .8rem}
+  .art p{font-size:16px}
+  .art li{font-size:15.5px}
+  .art blockquote{font-size:15.5px;padding:12px 14px}
+  .art table{font-size:13.5px}
+  .art thead th{padding:10px 12px}
+  .art tbody td{padding:10px 12px}
+  .art tbody td:first-child{padding-left:12px}
+  .art tbody td:last-child{padding-right:12px}
+  .art .tbl{margin:1.6rem 0}
+  .callout{margin:1.8rem 0 1.6rem;padding:16px 16px 13px}
+  .mermaid{padding:16px 10px}
+  .gantt{padding:16px 14px 14px}
+  .gantt-label{width:68px;font-size:11.5px}
+  .chain{padding:18px 14px 20px}
+  .branch{padding:18px 14px 20px}
+  .branch-grid{grid-template-columns:1fr}
+  .code-body code{font-size:13px}
+  .art details>summary{padding:14px 16px 14px 18px;font-size:16px}
+  .art details .qa-item{margin-left:4px;margin-right:4px}
+  .art details .qa-q,.art details .qa-a{padding:10px 12px}
+  .art details.pitfalls ul{margin:14px 12px 16px}
+  .art details.pitfalls li{padding:11px 14px 11px 42px}
+  .art details.pitfalls li::before{left:10px;top:11px}
+}
+/* 触屏（hover:none）—— hover 才现身的控件常显，否则触屏用户永远摸不到；桌面鼠标路径不变 */
+@media (hover:none){
+  .copy-btn{opacity:1}
+}
 </style>
 </head>
 <body>
@@ -930,6 +972,7 @@ let tocLinks = [], tocMap = {};
 const pop = document.getElementById('pop');
 const navHint = document.getElementById('navHint');
 const RM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const FINE_HOVER = window.matchMedia('(hover: hover) and (pointer: fine)').matches; // 触屏无 hover：预览气泡/halo/磁吸只属鼠标
 let hist = [ROOT_ID], idx = 0;
 
 function esc(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
@@ -1366,6 +1409,7 @@ function bindMastery(){
 }
 
 function bindPop(){
+  if(!FINE_HOVER) return; // 触屏：点按直达正文，hover 预览气泡只绑给鼠标（否则点按时 mouseenter 会闪出气泡）
   stage.querySelectorAll('a.wikilink:not(.broken)').forEach(function(a){
     const t = NOTES[a.getAttribute('data-target')];
     if(!t) return;
@@ -1907,6 +1951,27 @@ const startId = (_hslug && NOTES[_hslug]) ? _hslug
 /* ===== interaction layer wiring (delegated; survives every transition) ===== */
 (function fx(){
   if(RM) return;                       // ponytail: one guard, skip all FX for reduced-motion
+
+  // ink ripple on any interactive tap (delegated) — 鼠标/触屏通用（触屏拿它当点按反馈）
+  function spawnRipple(e){
+    const t = e.target.closest('.ventry,button,.copy-btn,.branch-card,.callout');
+    if(!t || t.getBoundingClientRect().width === 0) return;
+    const r = t.getBoundingClientRect();
+    const d = Math.max(r.width, r.height) * 2.2;
+    const c = getComputedStyle(t).getPropertyValue('--c') || getComputedStyle(t).getPropertyValue('--mc');
+    const span = document.createElement('span');
+    span.className = 'ripple';
+    if(c) span.style.setProperty('--c', c.trim());
+    span.style.width = span.style.height = d + 'px';
+    span.style.left = (e.clientX - r.left) + 'px';
+    span.style.top = (e.clientY - r.top) + 'px';
+    if(getComputedStyle(t).position === 'static') t.style.position = 'relative';
+    t.appendChild(span);
+    setTimeout(function(){ span.remove(); }, 600);
+  }
+  stage.addEventListener('pointerdown', spawnRipple, true);
+
+  if(!FINE_HOVER) return;              // 触屏（无 hover）：halo/磁吸只属鼠标语言，到此为止
   const halo = document.getElementById('halo');
   let raf = 0, lx = 0, ly = 0, hoverEl = null;
 
@@ -1933,24 +1998,6 @@ const startId = (_hslug && NOTES[_hslug]) ? _hslug
   window.addEventListener('pointerdown', function(){ if(halo) halo.classList.add('on'); });
   window.addEventListener('pointerup',   function(){ if(halo) halo.classList.remove('on'); });
   document.addEventListener('pointerleave', function(){ if(halo) halo.classList.remove('on'); });
-
-  // ink ripple on any interactive tap (delegated)
-  stage.addEventListener('pointerdown', function(e){
-    const t = e.target.closest('.ventry,button,.copy-btn,.branch-card,.callout');
-    if(!t || t.getBoundingClientRect().width === 0) return;
-    const r = t.getBoundingClientRect();
-    const d = Math.max(r.width, r.height) * 2.2;
-    const c = getComputedStyle(t).getPropertyValue('--c') || getComputedStyle(t).getPropertyValue('--mc');
-    const span = document.createElement('span');
-    span.className = 'ripple';
-    if(c) span.style.setProperty('--c', c.trim());
-    span.style.width = span.style.height = d + 'px';
-    span.style.left = (e.clientX - r.left) + 'px';
-    span.style.top = (e.clientY - r.top) + 'px';
-    if(getComputedStyle(t).position === 'static') t.style.position = 'relative';
-    t.appendChild(span);
-    setTimeout(function(){ span.remove(); }, 600);
-  }, true);
 
   // magnetic pull on small controls (delegated; auto-applies to freshly rendered wall)
   stage.addEventListener('pointermove', function(e){
