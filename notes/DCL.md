@@ -50,7 +50,7 @@ sequenceDiagram
 ```
 
 > [!note] 为什么 volatile 写**后**插 `StoreLoad` 就够
-> 重排风险只有一种形态:「`instance = s` 被重排到初始化之前」,即 volatile 写被提前到后续读/写之前。`StoreLoad` 正好挡这一刀——保证「写**之后**的所有读写都不能跨过该写上提」。而普通写与 volatile 写之间的重排(`StoreStore`),靠程序次序规则天然建立 happens-before,**不需要**额外屏障。
+> 重排风险只有一种形态:「`instance = s` 被重排到初始化之前」,即 volatile 写被提前到后续读/写之前。`StoreLoad` 正好挡这一刀——保证「写**之后**的所有读写都不能跨过该写上提」。而普通写与 volatile 写之间的重排(`StoreStore`),靠程序次序规则天然建立 happens-before(8 条规则全表见 [[JMM]]),**不需要**额外屏障。
 
 ## JDK 5 前后的语义差异
 
