@@ -49,6 +49,7 @@ const ACCENT = {
   'javase': '#00E676',              // 翠绿 · JavaSE
   jvm: '#FF5252',                   // 珊瑚红 · JVM
   juc: '#7C4DFF',                   // 亮紫 · JUC
+  spring: '#00E5FF',                // 亮青 · Spring
   architecture: '#FF6D00',          // 亮橙 · Architecture
   'system-design': '#FF6D00',       // 亮橙 · System Design
   network: '#00B0FF',               // 天蓝 · Network
@@ -63,6 +64,7 @@ const ACCENT_INK = {
   'javase': '#00A344',
   jvm: '#D32F2F',
   juc: '#5E35B1',
+  spring: '#0097A7',
   architecture: '#C43E00',
   'system-design': '#C43E00',
   network: '#0081CB',
@@ -73,12 +75,12 @@ const ACCENT_INK = {
 };
 const accentOf = (cat) => ACCENT[cat] || '#C9B08A';
 const accentInkOf = (cat) => ACCENT_INK[cat] || '#8A6D3B';
-const CAT_LABEL = { root:'Overview', 'java-collection':'Collections', 'javase':'JavaSE', jvm:'JVM', juc:'Concurrency', architecture:'Architecture', mysql:'MySQL', redis:'Redis', leetcode:'LeetCode', 'system-design':'System Design', projects:'Projects', network:'Network' };
+const CAT_LABEL = { root:'Overview', 'java-collection':'Collections', 'javase':'JavaSE', jvm:'JVM', juc:'Concurrency', spring:'Spring', architecture:'Architecture', mysql:'MySQL', redis:'Redis', leetcode:'LeetCode', 'system-design':'System Design', projects:'Projects', network:'Network' };
 
 // 卷（首页根墙分区）—— 数组顺序 = 卷序；cats 顺序 = 卷内位次
 // layout = 卷目录带版式（4 种词汇表）：tiles 磁贴墙 / spread 对开页 / feature 大标页 / index 索引列表；缺省 tiles
 const GROUP = [
-  { num:'Ⅰ', name:'Java 语言',    cats:['javase','java-collection','jvm','juc'], layout:'tiles' },
+  { num:'Ⅰ', name:'Java 生态',    cats:['javase','java-collection','jvm','juc','spring'], layout:'tiles' },
   { num:'Ⅱ', name:'架构与系统设计', cats:['architecture','system-design','network'], layout:'spread' },
   { num:'Ⅲ', name:'数据存储',     cats:['mysql','redis'],                   layout:'feature' },
   { num:'Ⅳ', name:'算法',         cats:['leetcode'],                        layout:'index' },
