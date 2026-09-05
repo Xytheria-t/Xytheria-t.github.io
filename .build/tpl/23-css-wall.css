@@ -1,0 +1,30 @@
+/* 子墙 = 轻量扉页 .subhead + .ventry 网格，整页继承父卷色；MOC 无后代 = .ventry.fallow（虚线边 + 「待垦」印章）。 */
+/* ===== 子 MOC 墙：轻量扉页 + 统一 .ventry 网格（继承父卷色） ===== */
+.subhead{position:relative;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;
+  padding:2vh 0 1.4vh;margin:0 0 1.8vh;border:0;
+  border-bottom:1px solid color-mix(in srgb,var(--c,var(--accent)) 40%,var(--line))}
+.subhead-rule{width:3px;align-self:stretch;background:var(--c,var(--accent-ink));flex:none;border-radius:0}
+.subhead-inner{flex:1;min-width:0}
+.subhead .eyebrow{margin:0 0 .8vh;font-family:var(--sans);font-size:10px;font-weight:600;letter-spacing:.3em;
+  text-transform:uppercase;color:color-mix(in srgb,var(--c,var(--accent)) 70%,var(--ink))}
+.subhead-title{font-family:var(--serif);font-size:clamp(28px,3.2vw,46px);font-weight:700;line-height:1.04;
+  letter-spacing:.01em;margin:0;color:var(--ink);text-wrap:balance}
+.subhead-meta{display:flex;align-items:baseline;gap:0;flex:none;font-family:var(--sans);
+  font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-variant-numeric:tabular-nums}
+.subhead-meta b{color:var(--ink);font-weight:700;font-size:13px;letter-spacing:0;margin-right:4px}
+.subhead-meta .sep{display:inline-block;width:1px;height:11px;background:var(--line);margin:0 14px;opacity:.7}
+.subwalls{margin-top:.4vh}
+.subwall{margin-bottom:24px}
+.subwalls>.subwall:last-child{margin-bottom:0}
+.subwall-head{display:flex;align-items:center;gap:12px;padding-bottom:8px;margin-bottom:16px;
+  border-bottom:1px solid color-mix(in srgb,var(--c,var(--accent)) 26%,var(--line))}
+.subwall-bar{width:2px;height:14px;background:var(--c,var(--accent-ink));flex:none}
+.subwall-name{font-family:var(--serif);font-size:clamp(17px,1.7vw,23px);font-weight:600;
+  color:color-mix(in srgb,var(--c,var(--accent)) 48%,var(--ink));margin:0;letter-spacing:.01em}
+.subwall-meta{margin-left:auto;font-family:var(--sans);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.subwall .vbody{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:760px){ .subwall .vbody{grid-template-columns:1fr} }
+/* 待垦态 —— MOC 没有任何后代笔记：虚线发丝边 + 灰化 + 虚线竖规 + 印章 */
+.stamp{display:inline-flex;align-items:center;flex:none;font-family:var(--sans);font-size:10px;
+  letter-spacing:.18em;text-transform:uppercase;font-weight:600;color:var(--muted);
+  border:1px dashed color-mix(in srgb,var(--muted) 50%,var(--line));padding:3px 8px;line-height:1}

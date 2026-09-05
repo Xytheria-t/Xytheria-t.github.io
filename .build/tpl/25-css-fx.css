@@ -1,0 +1,26 @@
+/* halo/ripple 是鼠标语言：prefers-reduced-motion 下禁动；触屏（FINE_HOVER=false）不生效。 */
+/* ===== interaction layer (no 3D tilt / no gradient text / RM-safe) ===== */
+
+/* ink ripple — spread on tap/click */
+.ripple{position:absolute;border-radius:50%;pointer-events:none;z-index:6;transform:translate(-50%,-50%) scale(0);
+  background:color-mix(in srgb,var(--c,var(--accent)) 32%,transparent);
+  animation:rippleOut .6s var(--ease) forwards}
+@keyframes rippleOut{to{transform:translate(-50%,-50%) scale(1);opacity:0}}
+/* cursor halo — soft accent ring trailing the pointer */
+#halo{position:fixed;left:0;top:0;width:32px;height:32px;border-radius:50%;z-index:55;pointer-events:none;opacity:0;
+  border:1.5px solid color-mix(in srgb,var(--accent-ink) 55%,transparent);transform:translate(-50%,-50%);
+  transition:width .2s var(--ease),height .2s var(--ease),opacity .3s var(--ease),background .2s var(--ease);mix-blend-mode:multiply}
+#halo.on{opacity:.85}
+#halo.big{width:54px;height:54px;background:color-mix(in srgb,var(--accent-ink) 7%,transparent)}
+
+@media (prefers-reduced-motion:reduce){
+  #halo{display:none !important}
+  .ripple{display:none !important}
+}
+/* ---- interaction layer 样式（halo / ripple） ---- */
+#toast{position:fixed;left:50%;bottom:42px;transform:translateX(-50%) translateY(12px);
+  background:#1f1b16ee;color:#f4ead6;padding:10px 18px;border-radius:10px;
+  font:600 14px/1.4 Georgia,"Songti SC",serif;
+  box-shadow:0 8px 30px rgba(0,0,0,.35);opacity:0;pointer-events:none;
+  transition:opacity .2s,transform .2s;z-index:9999;max-width:80vw;text-align:center}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}

@@ -1,0 +1,68 @@
+/* 设计 tokens 与全局底座。配色主权在 build.mjs 的 ACCENT/ACCENT_INK（高饱和、色相分离）——禁擅自往低饱和调。
+   纸纹 = body::before(噪点)+::after(细方格) 双层，勿拆；无暗色模式，别加主题切换。 */
+:root{
+  --bg:#FBF9F5; --ink:#211D17; --muted:#7A7065; --line:#ECE6DB;
+  --serif:"Songti SC","STSong","Noto Serif SC","Source Han Serif SC",Georgia,"Times New Roman",serif;
+  --sans:system-ui,-apple-system,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --mono:"JetBrains Mono","SFMono-Regular",ui-monospace,Consolas,"Liberation Mono",monospace;
+  --accent:#C9B08A;
+  --accent-ink:#8A6D3B;
+  --ease:cubic-bezier(.16,1,.3,1);
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+html{scroll-behavior:smooth;scrollbar-width:none}
+body{
+  color:var(--ink); -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;-webkit-tap-highlight-color:transparent; /* 点按反馈交给 ripple，压掉系统高亮（桌面无感） */
+  background:
+    radial-gradient(1200px 600px at 85% -10%, color-mix(in srgb,var(--accent) 10%, transparent), transparent 62%),
+    radial-gradient(900px 500px at -10% 110%, color-mix(in srgb,var(--accent) 6%, transparent), transparent 60%),
+    var(--bg);
+  transition:background .6s ease;
+}
+body::before{content:"";position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.04;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+/* 细方格参考线 — 地图册/手稿纸质感，比噪点更克制，纯底纹不抢戏 */
+body::after{content:"";position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.07;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Cpath d='M28 0H0v28' fill='none' stroke='%23211D17' stroke-width='0.5'/%3E%3C/svg%3E")}
+::-webkit-scrollbar{width:0;height:0}
+::selection{background:color-mix(in srgb,var(--accent) 22%,transparent);color:var(--ink)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:5px}
+/* progress hairline */
+#progress{position:fixed;top:0;left:0;height:2px;width:100%;transform:scaleX(0);transform-origin:left;z-index:50;opacity:0;
+  background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 35%,#fff));
+  transition:transform .12s linear,opacity .2s}
+/* stage */
+#stage{position:relative;z-index:2;min-height:100vh;min-height:100svh;padding:8vh 6vw 14vh;
+  transition:opacity .42s var(--ease),transform .42s var(--ease),filter .42s var(--ease)}
+/* eyebrow — 栏目标签（扉页 / 卷首共用） */
+.eyebrow{font-family:var(--sans);font-size:10.5px;font-weight:600;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--muted);margin:0 0 10px;display:flex;align-items:center;gap:10px}
+.eyebrow::before{content:"";display:inline-block;width:18px;height:1px;background:var(--accent-ink)}
+
+/* (atlas grid + folio 布局已弃用；全站统一 .ventry 网格) */
+
+/* 卷 band — 首页根墙分卷版式（顺序/尺寸由 build.mjs 的 GROUP 表决定，不随内容权重漂移） */
+.bands{margin-top:1.2vh}
+.band{margin-bottom:22px}                    /* 卷与卷之间的呼吸（紧凑型） */
+.bands>.band:last-child{margin-bottom:0}     /* 最后一卷贴底 */
+.band-head{display:flex;align-items:center;gap:14px;padding-bottom:10px;margin-bottom:20px;
+  border-bottom:1px solid color-mix(in srgb,var(--c,var(--accent)) 38%,var(--line));
+  position:relative}
+/* band-head 左右两端各加一个短装饰竖线 */
+.band-head::before,.band-head::after{content:"";position:absolute;width:1px;height:6px;
+  background:var(--accent-ink);opacity:.5}
+.band-head::before{left:-6px;bottom:-3.5px;transform:rotate(45deg)}
+.band-head::after{right:-6px;bottom:-3.5px;transform:rotate(45deg)}
+.band-num{font-family:var(--serif);font-size:clamp(24px,2.8vw,34px);line-height:1;flex:none;
+  font-style:italic;letter-spacing:.04em;font-weight:600;
+  color:color-mix(in srgb,var(--c,var(--accent)) 72%,var(--ink));
+  padding:2px 9px;border:1px solid color-mix(in srgb,var(--c,var(--accent)) 50%,transparent);
+  position:relative}
+.band-name{font-family:var(--serif);font-size:clamp(19px,1.9vw,26px);font-weight:600;
+  color:color-mix(in srgb,var(--c,var(--accent)) 40%,var(--ink));margin:0;letter-spacing:.01em}
+.band-meta{margin-left:auto;display:flex;align-items:center;gap:0 14px;flex-wrap:wrap;
+  font-family:var(--sans);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);font-variant-numeric:tabular-nums}
+.band-meta b{color:var(--ink);font-weight:700;font-size:12.5px;letter-spacing:0;margin-right:4px}

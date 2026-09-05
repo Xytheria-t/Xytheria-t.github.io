@@ -619,13 +619,41 @@ function emit(){
   copyFileSync(PROJ + '/.build/mermaid.min.js', PROJ + '/vendor/mermaid.min.js');
   const reader = READER_HTML.replace('/*__ROOT__*/', JSON.stringify(ROOT_ID))
     .replace('/*__NOTES__*/', data);
+  // 兜底：replace 只认第一处命中——模板注释里若出现占位符字面量会抢占注入，产物静默坏掉，这里宁可炸构建
+  if (reader.includes('/*__NOTES__*/') || reader.includes('/*__ROOT__*/')) {
+    throw new Error('占位符未被注入：tpl 模块里出现了占位符字面量（注释里也别写），去 40-js-core.js 附近排查');
+  }
   writeFileSync(OUT, reader, 'utf8');
   console.log('built', Object.keys(NOTES).length, 'notes ->', OUT, '| root:', ROOT_ID, '| mermaid -> vendor/mermaid.min.js (lazy)');
 }
 
 // 自动提交已关闭（用户决定手动 commit）：构建只产出 reader.html，不碰 git。
 
-// ---------------- reader template (外置 .tpl.html；两个 /*__XX__*/ 占位符由 emit() 注入) ----------------
-const READER_HTML = readFileSync(PROJ + '/.build/reader.tpl.html', 'utf8');
+// ---------------- reader template（外置 tpl/ 目录，按清单序纯拼接；两个 /*__XX__*/ 占位符在 js-core.js，由 emit() 注入） ----------------
+// 铁律：TPL_MANIFEST 数组序 = 字节序；改模板只动 .build/tpl/ 下的模块文件，绝不手改产物 reader.html。
+// 模块都按热区切（墙/正文/导航/特效…），改哪块只读哪块；新增模块必须登记进清单，漏登记 = 静默丢代码。
+const TPL_DIR = PROJ + '/.build/tpl';
+const TPL_MANIFEST = [
+  '10-head.html',        // <head> 壳 + <style> 开标签
+  '20-css-base.css',     // 设计 tokens / 暖纸底 / 全局排版
+  '21-css-cover.css',    // 封面（根墙刊头）+ 卷索引色带
+  '22-css-band.css',     // 卷目录带 4 版式词汇表（tiles/spread/feature/index）
+  '23-css-wall.css',     // 子 MOC 墙 + 待垦态
+  '24-css-article.css',  // 正文页（.art / 代码块 / callout / chain / mermaid 容器 / gantt）
+  '25-css-fx.css',       // 交互层样式（halo / ripple）
+  '26-css-mobile.css',   // 手机端适配（≤540px）
+  '30-tail.html',        // </style> + <body> 壳 + <script> 开标签
+  '40-js-core.js',       // NOTES/ROOT_ID 注入点 + DOM refs + esc/attr
+  '41-js-mastery.js',    // 熟练度 / 翻阅时间戳 / recently-read / relTime
+  '42-js-wall.js',       // wallHTML（根墙杂志版式 + 子墙）与 entryHTML/flatten
+  '43-js-article.js',    // articleHTML 正文渲染
+  '44-js-bind.js',       // bind / bindMastery / bindPop（双链 hover 预览）/ bindCopy
+  '45-js-mermaid.js',    // mermaid 懒加载 + enrich（graph/sequence 高亮）
+  '46-js-setup.js',      // 正文 setup：chain 滚动 / 锚点 / 表格排序 / setupWall
+  '47-js-nav.js',        // 导航模型：go/popstate/transitionTo/spine/companion
+  '48-js-fx.js',         // 交互层接线：ripple/halo/磁吸/指针跟随光晕（FINE_HOVER 闸门后）
+  '90-end.html',         // 启动行 + </script></body></html>
+];
+const READER_HTML = TPL_MANIFEST.map((f) => readFileSync(TPL_DIR + '/' + f, 'utf8')).join('');
 
 emit();

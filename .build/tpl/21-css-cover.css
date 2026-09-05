@@ -1,0 +1,91 @@
+/* 封面 = 纯审美刊头：不放动态数据；卷索引带 .cm-rail 一段一卷色，与 .ventry 同源用色（淡底+实色顶标+深墨字）。 */
+/* ===== 封面 cover — 根墙杂志刊头（纯审美：大字标题 + 卷名索引，不放动态数据） ===== */
+.cover{position:relative;isolation:isolate;display:grid;grid-template-columns:minmax(0,1fr) auto;
+  gap:14px 44px;align-items:end;padding:2vh 0 1.6vh;margin-bottom:.4vh}
+/* 顶部装饰横线：双段渐入渐出 */
+.cover::before{content:"";position:absolute;left:-6vw;right:-6vw;top:-.8vh;height:1px;
+  background:linear-gradient(90deg,transparent 0%,color-mix(in srgb,var(--accent-ink) 55%,transparent) 12%,
+    color-mix(in srgb,var(--accent-ink) 55%,transparent) 88%,transparent 100%);pointer-events:none}
+/* 封面右下小期号 — 替代之前旋转大水印；低对比，不抢标题 */
+.cover::after{content:"Folio I · MMXXVI";position:absolute;right:-6vw;bottom:-1.6vh;
+  font-family:var(--serif);font-style:italic;font-size:11px;letter-spacing:.18em;
+  color:var(--muted);opacity:.7;pointer-events:none;font-variant-numeric:tabular-nums}
+/* cover-main 内部：左侧细竖线装饰 */
+.cover-main{position:relative;z-index:1;padding-left:14px}
+.cover-main::before{content:"";position:absolute;left:0;top:.6em;bottom:.6em;width:2px;
+  background:linear-gradient(180deg,var(--accent-ink) 0%,color-mix(in srgb,var(--accent-ink) 45%,transparent) 60%,transparent 100%)}
+.cover-issue{display:flex;align-items:center;gap:14px;margin:0 0 1.2vh;
+  font-family:var(--sans);font-size:10px;font-weight:600;letter-spacing:.32em;
+  text-transform:uppercase;color:var(--accent-ink)}
+.cover-issue::after{content:"";flex:1;height:1px;background:var(--line)}
+.cover-issue-r{margin-left:auto;font-weight:500;letter-spacing:.28em;color:var(--muted)}
+.cover-title{position:relative;display:inline-block;font-family:var(--serif);
+  font-size:clamp(38px,4.8vw,72px);font-weight:700;
+  line-height:1.02;letter-spacing:.01em;margin:0;color:var(--ink);text-wrap:balance}
+/* 标题下方装饰横线：长短线组合 */
+.cover-title::after{content:"";display:block;width:64px;height:2px;margin-top:14px;
+  background:var(--accent-ink);position:relative}
+/* 刊头左上小重音：4px 实心方点，紧贴标题左上 — 与下方横线、左侧竖规组成刊头三向装饰 */
+.cover-title::before{content:"";position:absolute;left:-2px;top:.42em;
+  width:4px;height:4px;background:var(--accent-ink)}
+.cover-dot{color:var(--accent-ink)}
+.cover-sub{margin:14px 0 0;max-width:46ch;font-family:var(--serif);font-style:italic;
+  font-size:clamp(12.5px,1.15vw,15px);line-height:1.6;color:var(--muted)}
+/* 卷色标：6 段斜切色票咬合成一条印刷套色条 = 封面即全站配色预览 + 卷导航（点击跳卷）
+   用色与下方 .ventry 同源（淡色底 + 实色顶标 + 深墨卷色字），不铺纯色块——纯色块与下方卡片不是一个视觉语言 */
+.cover-mosaic{position:relative;z-index:1;min-width:300px}
+/* 索引标签 — eyebrow + 渐隐引线（卷数由 JS 注入到 .cover-mosaic-tag） */
+.cover-mosaic-tag{display:flex;align-items:center;gap:9px;margin-bottom:10px;
+  font-family:var(--sans);font-size:8px;font-weight:700;letter-spacing:.34em;
+  text-transform:uppercase;color:var(--accent-ink)}
+.cover-mosaic-tag::after{content:"";flex:1;height:1px;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--accent-ink) 50%,transparent),transparent)}
+/* 色带本体：相邻段 margin-right:-10px 重叠 + clip-path 斜切 → 斜边无缝咬合 */
+.cm-rail{display:flex;align-items:stretch;height:38px}
+.cm-tile{flex:1 1 0;min-width:0;position:relative;border:0;padding:0;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  background-color:color-mix(in srgb,var(--cc) 16%,#FFFDF8);
+  color:color-mix(in srgb,var(--cc) 58%,var(--ink));
+  clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%);margin-right:-10px;
+  transition:transform .22s var(--ease),background-color .22s var(--ease)}
+/* 顶部实色标 — 斜切后 6 段连成一条套色细线，是卷色的主要识别点 */
+.cm-tile::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;
+  background:var(--cc);transition:height .22s var(--ease)}
+.cm-tile:first-child{clip-path:polygon(0 0,100% 0,calc(100% - 10px) 100%,0 100%)}
+.cm-tile:last-child{margin-right:0;clip-path:polygon(10px 0,100% 0,100% 100%,0 100%)}
+.cm-tile:only-child{margin-right:0;clip-path:none}
+/* hover / 聚焦 = 抽出一张色票（上浮 + 底色加重，与 .ventry hover 同语） */
+.cm-tile:hover,.cm-tile:focus-visible{transform:translateY(-7px);z-index:3;
+  background-color:color-mix(in srgb,var(--cc) 34%,#FFFDF8)}
+/* 轮播激活段 — 与 hover 同语（抽出 + 底色加重 + 顶标加粗），z-index 低于 hover 让指针优先 */
+.cm-tile.cm-on{transform:translateY(-7px);z-index:2;
+  background-color:color-mix(in srgb,var(--cc) 34%,#FFFDF8)}
+.cm-tile.cm-on::before{height:6px}
+/* 焦点环走 inset：clip-path 会裁掉外扩的 ring */
+.cm-tile:focus-visible{outline:0;box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--cc) 58%,var(--ink))}
+/* 段内罗马数字 */
+.cm-num{font-family:var(--serif);font-style:italic;font-size:13.5px;line-height:1;
+  font-weight:600;position:relative;z-index:2}
+/* 卷名 caption — JS 自动轮播切换（静止态 = 第一卷），左侧短规随卷色变化；opacity 走淡入淡出 */
+.cm-caption{margin:12px 0 0;display:flex;align-items:baseline;gap:9px;
+  font-family:var(--serif);font-size:15px;font-weight:600;color:var(--ink);
+  transition:opacity .2s var(--ease)}
+  transition:color .2s var(--ease)}
+.cm-caption::before{content:"";width:16px;height:2px;flex:none;transform:translateY(-4px);
+  background:var(--cnow,var(--accent-ink));transition:background .2s var(--ease)}
+@media (prefers-reduced-motion:reduce){
+  .cm-tile{transition:none}
+  .cm-tile:hover,.cm-tile:focus-visible,.cm-tile.cm-on{transform:none}
+}
+@media (max-width:980px){
+  .cover{grid-template-columns:1fr}
+  .cover-main{padding-left:10px}
+  .cover-mosaic{width:100%;min-width:0}
+}
+/* 手机封面：期号行缩排去右签（375px 放不下两段 + .32em 字距），卷色带压矮一档 */
+@media (max-width:540px){
+  .cover-issue{font-size:9px;letter-spacing:.14em}
+  .cover-issue-r{display:none}
+  .cm-rail{height:32px}
+  .cm-num{font-size:12px}
+}
