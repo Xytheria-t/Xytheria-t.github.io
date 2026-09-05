@@ -28,9 +28,8 @@ jobs:
         run: node .build/build.mjs
 
       - name: Verify
-        run: |
-          node .build/check.mjs
-          node .build/verify-groups.mjs
+        # 与本地 watch/watch 后校验同一套（check + groups + mastery + spans + health）
+        run: node .build/verify.mjs
 
       - name: Prepare
         run: |
