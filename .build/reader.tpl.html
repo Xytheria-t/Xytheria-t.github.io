@@ -174,8 +174,10 @@ body::after{content:"";position:fixed;inset:0;z-index:1;pointer-events:none;opac
   transition:opacity .5s ease,transform .5s var(--ease),border-color .25s}
 .ventry.in{opacity:1;transform:none}
 .ventry::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:3px;
-  background:linear-gradient(180deg,var(--c),color-mix(in srgb,var(--c) 45%,transparent))}
+  background:linear-gradient(180deg,var(--c),color-mix(in srgb,var(--c) 45%,transparent));
+  transition:top .35s var(--ease),bottom .35s var(--ease)}
 .ventry:hover{border-color:color-mix(in srgb,var(--c) 85%,var(--line));transform:translateY(-3px)}
+.ventry:hover::before{top:0;bottom:0}
 .ventry::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;z-index:1;
   background:radial-gradient(240px 240px at var(--mx) var(--my), color-mix(in srgb,var(--c) 18%,transparent), transparent 60%);
   transition:opacity .3s var(--ease);mix-blend-mode:multiply}
@@ -208,23 +210,6 @@ body::after{content:"";position:fixed;inset:0;z-index:1;pointer-events:none;opac
   border:0.5px solid color-mix(in srgb,var(--c) 38%,transparent);
   border-radius:999px;padding:4px 10px;position:relative;z-index:2}
 .v-chip::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--c);flex:none}
-/* 磁贴 hover 预览：最近 3 篇，点击直达 */
-.v-preview{max-height:0;overflow:hidden;position:relative;z-index:2;
-  transition:max-height .35s var(--ease)}
-.ventry:hover .v-preview,.ventry:focus-within .v-preview{max-height:8em}
-.v-plabel{display:block;margin:9px 0 5px;padding-top:9px;
-  border-top:1px dashed color-mix(in srgb,var(--c) 40%,var(--line));
-  font-family:var(--sans);font-size:9px;font-weight:600;letter-spacing:.2em;
-  text-transform:uppercase;color:var(--muted)}
-.v-preview a{display:block;font-family:var(--serif);font-style:italic;font-size:13px;
-  line-height:1.65;color:color-mix(in srgb,var(--c) 65%,var(--ink));
-  text-decoration:none;padding-left:14px;position:relative;transition:color .2s}
-.v-preview a::before{content:"";position:absolute;left:0;top:.85em;width:6px;height:1px;
-  background:var(--c);opacity:.6}
-.v-preview a:hover{color:var(--accent-ink)}
-/* 预览行熟悉度微点：最近 N 篇里已评级的叶子，行尾补色点（hover 预览一瞥可见深层笔记状态） */
-.v-preview .vmd{display:inline-block;width:5px;height:5px;margin-left:6px;border-radius:50%;
-  background:var(--mc);vertical-align:1px;flex:none}
 /* 待垦态 —— 与卡片同语：虚线边 + 虚线竖规 + 印章 */
 .ventry.fallow{background:transparent;border-style:dashed;
   border-color:color-mix(in srgb,var(--c) 38%,var(--line))}
@@ -242,10 +227,6 @@ body::after{content:"";position:fixed;inset:0;z-index:1;pointer-events:none;opac
   padding:16px 18px 14px}
 .band--spread .v-name{font-size:clamp(17px,1.55vw,21px)}
 .band--spread .ventry:hover{transform:none;border-color:color-mix(in srgb,var(--c) 70%,var(--line))}
-/* preview 展开行为与全局一致：hover / focus 才展开，不常驻（改过一版常驻，用户否了）。
-   只放宽 hover 时的高度上限：3 列比单列窄，标题更易换行，8em 会裁掉第 3 条。 */
-.band--spread .ventry:hover .v-preview,
-.band--spread .ventry:focus-within .v-preview{max-height:12em}
 /* --feature 大标页：卷名巨字，领域为顶线编辑栏目块 */
 .band--feature .band-name{font-size:clamp(26px,3vw,42px);font-weight:700}
 .band--feature .band-head{padding-bottom:12px;border-bottom-width:2px}
@@ -265,12 +246,12 @@ body::after{content:"";position:fixed;inset:0;z-index:1;pointer-events:none;opac
 .band--index .ventry + .ventry{border-top:1px solid color-mix(in srgb,var(--line) 62%,transparent)}
 .band--index .ventry::before{top:50%;bottom:auto;height:1px;width:10px;
   transform:translateY(-50%);background:var(--c);opacity:.5}
+.band--index .ventry:hover::before{top:50%;bottom:auto} /* 索引行的短横线不参与竖规 hover 延展 */
 .band--index .v-top{display:contents}
 .band--index .v-name{order:1;font-size:16.5px}
 .band--index .v-tag{order:2}
 .band--index .v-count{order:3;margin-left:auto}
 .band--index .v-data{order:4}
-.band--index .v-preview{order:5;flex-basis:100%}
 .band--index .ventry:hover{transform:none;border-color:transparent}
 .band--index .ventry:hover::after{opacity:0}
 @media (max-width:980px){
@@ -949,10 +930,6 @@ function mastHTML(id){
   const o = mastOf(id); if(!o) return '';
   return '<span class="vm" style="--mc:'+MASTERY_COLOR[o.m.k]+'" title="'+esc(o.m.label)+' · '+esc(o.m.hint)+'（评级于 '+new Date(o.t).toLocaleDateString('zh-CN')+'）">'+esc(o.m.label)+'</span>';
 }
-function mastDotHTML(id){
-  const o = mastOf(id); if(!o) return '';
-  return '<span class="vmd" style="--mc:'+MASTERY_COLOR[o.m.k]+'" title="'+esc(o.m.label)+' · '+esc(o.m.hint)+'"></span>';
-}
 // 字数（含中文）：去标签后统计非空白字符数
 function charCount(html){
   const txt = (html||'').replace(/<[^>]+>/g,'').replace(/\s+/g,'');
@@ -1057,8 +1034,7 @@ function wallHTML(n){
   };
   const facet = MOC_FACETS[n.id] || null;
   // flatten a MOC's tree to actual notes (mtime desc, top k)
-  function flatten(t, k){
-    k = k || 2;
+  function flatten(t){
     if(!t || t.type !== 'moc') return [];
     const out = [], seen = new Set();
     (function walk(it){
@@ -1067,7 +1043,7 @@ function wallHTML(n){
       if(it.type !== 'moc'){ out.push(it); return; }
       (it.links||[]).forEach(function(s){ walk(NOTES[s]); });
     })(t);
-    return out.sort(function(a,b){return new Date(b.mtime||0)-new Date(a.mtime||0);}).slice(0,k);
+    return out.sort(function(a,b){return new Date(b.mtime||0)-new Date(a.mtime||0);});
   }
   // roman chapter numerals Ⅰ-Ⅶ for 1-7
   const ROMAN = ['Ⅰ','Ⅱ','Ⅲ','Ⅳ','Ⅴ','Ⅵ','Ⅶ','Ⅷ','Ⅸ','Ⅹ','Ⅺ','Ⅻ'];
@@ -1083,7 +1059,7 @@ function wallHTML(n){
     order.sort(function(a,b){ return (a<0?1e9:a) - (b<0?1e9:b); }); // 未归入任何卷的排最后
     return order.map(function(gi){
       const bItems = by[gi].slice().sort(function(a,b){ return a.groupRank - b.groupRank; });
-      const notes = bItems.map(function(t){ return t.type==='moc' ? flatten(t,999).length : 1; });
+      const notes = bItems.map(function(t){ return t.type==='moc' ? flatten(t).length : 1; });
       return { gi:gi, items:bItems, notes:notes, isFallow:notes.map(function(c){ return c === 0; }),
                num: bItems[0].groupNum || '·', name: bItems[0].groupName || '其他' };
     });
@@ -1096,13 +1072,12 @@ function wallHTML(n){
   const bandList = bandOn ? groupBands(plain) : [];
   /* 首页根墙 = 杂志：纯审美封面 + 各卷目录带（版式 = GROUP.layout，4 种词汇表） */
   function entryHTML(t, color, opts){
-    const subs = t.type==='moc' ? flatten(t,999) : [];
+    const subs = t.type==='moc' ? flatten(t) : [];
     const fallow = t.type==='moc' && subs.length===0;
     const count = t.type==='moc' ? subs.length : 1;
     let lastM = new Date(t.mtime||0).getTime();
     subs.forEach(function(x){ const mt = new Date(x.mtime||0).getTime(); if(mt>lastM) lastM = mt; });
     const rel = lastM ? relTime(lastM) : '';
-    const recent = subs.slice(0,3); // flatten 已按 mtime 降序
     const c = typeof color === 'string' ? color : t.accent;
     const chip = opts && opts.chip ? opts.chip : ''; // 语义 chip：注册了 MOC_FACETS 的卡走 chip 路线，不再叠「1 篇/更新于」噪音
     const mast = (t.type!=='moc') ? mastHTML(t.id) : ''; // 熟悉程度徽标：仅原子笔记且评级过才渲染，顶替无信息量的「1 篇」
@@ -1112,9 +1087,6 @@ function wallHTML(n){
       + '</div>'
       + '<h3 class="v-name">'+esc(t.title)+'</h3>'
       + (chip ? '<div class="v-chip">'+esc(chip)+'</div>' : (rel ? '<div class="v-data">更新于 '+esc(rel)+'</div>' : ''))
-      + (recent.length ? '<div class="v-preview"><span class="v-plabel">最近</span>'
-          + recent.map(function(r){ return '<a data-target="'+r.id+'">'+esc(r.title)+mastDotHTML(r.id)+'</a>'; }).join('')
-          + '</div>' : '')
       + '</article>';
   }
   if(bandOn){
@@ -1264,7 +1236,7 @@ function articleHTML(n){
 }
 
 function bind(){
-  // stopPropagation：磁贴预览里的笔记链接嵌在 data-target 卡片内，避免双重 go()
+  // stopPropagation：防 data-target 嵌套时外层卡再触发一次 go()
   stage.querySelectorAll('[data-target]').forEach(function(el){ el.onclick=function(e){ e.stopPropagation(); go(el.getAttribute('data-target')); }; });
   stage.querySelectorAll('a.wikilink:not(.broken)').forEach(function(el){ el.onclick=function(){go(el.getAttribute('data-target'));}; });
   // 封面卷色带 — 点击滚到对应卷带；hover/focus 暂停轮播并切到该段；离开后立即跳到下一段继续；静止 2.2s 自动轮播
@@ -1954,6 +1926,30 @@ const startId = (_hslug && NOTES[_hslug]) ? _hslug
                                 + ((e.clientY - r.top - r.height/2) * 0.22) + 'px)';
   });
   stage.addEventListener('pointerleave', function(){ if(hoverEl){ hoverEl.style.transform=''; hoverEl=null; } });
+
+  // 磁贴指针跟随光晕：更新卡内 --mx/--my（背景 tint 与 hover sheen 共用），换卡/离场复位居中
+  let sheenEl = null, sheenRaf = 0, sx = 0, sy = 0;
+  stage.addEventListener('pointermove', function(e){
+    const el = e.target.closest('.ventry');
+    sx = e.clientX; sy = e.clientY;
+    if(sheenEl && sheenEl !== el){
+      sheenEl.style.setProperty('--mx','50%'); sheenEl.style.setProperty('--my','50%'); sheenEl = null;
+    }
+    if(!el) return;
+    sheenEl = el;
+    if(sheenRaf) return;
+    sheenRaf = requestAnimationFrame(function(){
+      sheenRaf = 0;
+      if(!sheenEl) return;
+      const r = sheenEl.getBoundingClientRect();
+      sheenEl.style.setProperty('--mx', ((sx - r.left) / r.width * 100).toFixed(1) + '%');
+      sheenEl.style.setProperty('--my', ((sy - r.top) / r.height * 100).toFixed(1) + '%');
+    });
+  }, {passive:true});
+  stage.addEventListener('pointerleave', function(){
+    if(sheenRaf){ cancelAnimationFrame(sheenRaf); sheenRaf = 0; }
+    if(sheenEl){ sheenEl.style.setProperty('--mx','50%'); sheenEl.style.setProperty('--my','50%'); sheenEl = null; }
+  });
 })();
 
 hist=[startId]; idx=0; transitionTo(startId);
