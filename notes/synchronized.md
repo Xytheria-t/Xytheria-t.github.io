@@ -31,19 +31,32 @@ synchronized 是 JVM 内置互斥锁(管程) → 加锁范围决定锁对象 →
 
 ## 释放与可重入
 
-| 语义 | 实现 |
+三条语义都由同一个结构兑现——**monitor(管程)**:JVM 给每个对象配的锁实体,内部记两个字段:**owner**(当前持锁线程)、**重入计数**(同一线程再进一次就 +1):
+
+| 语义 | 规则 |
 |---|---|
-| 自动释放 | 正常返回或抛异常,JVM 都在监视器退出时释放,不会锁泄漏 |
-| 可见性 | 解锁前的写,对随后加**同一把锁**的线程可见(happens-before 监视器锁规则) |
-| 可重入 | monitor 计数器 +1 / -1,归零才真正释放 |
+| 可重入 | 加锁时 owner 已是自己 → 计数 +1 直接进,不重新抢 |
+| 自动释放 | 退出时计数 -1,**归零才清 owner、真正放锁**;正常返回、抛异常都会走到,不会锁泄漏 |
+| 可见性 | 放锁前的写,对随后拿到**同一把锁**的线程可见(happens-before 监视器锁规则) |
 
-> [!note] 可重入解决什么
-> 同步方法调 `super.method()`、或同步方法之间互相调用,不可重入就会自己锁自己。重入几次就要退出几次,计数器归零才释放。
+> [!note] 没有可重入,嵌套调用就自己锁自己
+> - 同步方法调本类另一个同步方法——还是同一把 `this`,自己等自己
+> - 子类 `synchronized` 方法里调 `super.method()`——锁的还是同一个 `this`
+>
+> 可重入 = 同一线程再进同一把锁只 +1 计数,不重抢。
 
-> [!tip] 字节码层面
-> 同步块 → `monitorenter` + 两个 `monitorexit`；同步方法 → 方法表 `ACC_SYNCHRONIZED`,JVM 隐式加锁。
+计数怎么走,看一段递归:
 
-一段看似三行的 Java 代码:
+```java
+class MathUtil {
+    synchronized int fact(int n) {   // 每进入一层,同一把锁重入一次:计数 1→2→3→…
+        return n <= 1 ? 1 : n * fact(n - 1);
+    }
+}
+// 递归回程逐层退出:计数 -1、-1、-1…减到 0 这一刻才真正放锁
+```
+
+「自动释放」由 JVM 在字节码层兑现:一段看似三行的 Java 代码
 
 ```java
 void m() {
@@ -53,38 +66,26 @@ void m() {
 }
 ```
 
-编译后的字节码骨架(去掉栈/常量细节后):
+编译出的字节码骨架(只留锁相关指令,`x++` 本体省略):
 
 ```text
-monitorenter        ← 进入:尝试拿锁对象的 monitor
-aload_0
-dup
-getfield x
-iconst_1
-iadd
-putfield x
-aload_0
-monitorexit         ← 退出 1:正常路径释放
+monitorenter        ← 进入:拿 this 的 monitor,计数 0→1
+   ...              ← x++ 的字段读写,与锁无关
+monitorexit         ← 退出 1:正常路径,计数 1→0,放锁
 goto  RETURN
-TRY_END:
-astore_1            ← 异常表项指向此处,接住任意异常
-aload_0
-monitorexit         ← 退出 2:异常路径也释放
-aload_1
-athrow
+monitorexit         ← 退出 2:异常路径,任何异常先跳到这
+athrow              ← 放完锁,再把异常抛出去
 RETURN
 ```
 
 > [!note] 两个 `monitorexit` 不是冗余
-> 第一个罩正常流程,第二个罩异常表(异常处理器)——只要方法非正常退出,JVM 都跳到异常块走第二个 exit 再 rethrow,所以**不会锁泄漏**。
+> - 编译器不知道 m 会不会抛异常,正常路径、异常路径**各配一个 exit**
+> - 异常表(编译器生成的异常处理器)把任意异常引到第二个 exit:先放锁、再 rethrow——「抛异常也不锁泄漏」的落地位置
 
 > [!tip] 同步方法为什么没有这两条指令
-> 锁信息挪到了**方法表**(Class 文件的 `methods` 区段)里 `flags` 上,有一项 `ACC_SYNCHRONIZED`(静态方法再叠 `ACC_STATIC`)。JVM 调用时:
->
-> - 读方法 flag → 是同步方法 → 隐式对 `this`(实例)/`Class 对象`(静态)走一遍「monitorenter + 业务 + monitorexit」的等价流程
-> - 调用返回 / 抛异常 → JVM 同样保证释放,逻辑上和同步块一样
->
-> 两套写法只是**写法不同 + 锁对象不同**,底层都是同一个 monitor。`javap -v` 看字节码能一眼分辨:`monitorenter` 在 = 同步块;没有但方法表带 `ACC_SYNCHRONIZED` = 同步方法。
+> - 锁信息不在指令里,记在方法的访问标志 **`ACC_SYNCHRONIZED`** 上(静态方法再叠 `ACC_STATIC`)
+> - JVM 调用时读 flag,隐式走「enter → 方法体 → exit」等价流程;返回/抛异常同样保证释放,与同步块底层是同一个 monitor
+> - `javap -v` 一眼分辨:有 `monitorenter` = 同步块;没有但带 `ACC_SYNCHRONIZED` = 同步方法
 
 ## 锁升级（JDK 6+）
 
