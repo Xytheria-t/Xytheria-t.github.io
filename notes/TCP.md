@@ -37,11 +37,26 @@ aliases: [传输控制协议, Transmission Control Protocol]
 
 三次握手本质不是为了「确认对方在线」，而是**协商初始序列号并同步窗口信息**，为后续可靠传输与流量控制铺路。
 
+先统一记号：**大写 = 标志位**（首部里的 1 bit 开关），**小写 = 字段值**（首部里的编号），下文全程使用。
+
+| 记号 | 全称 | 含义 |
+|---|---|---|
+| SYN | Synchronize | 标志位：请求建连，同时宣告自己的初始序列号 |
+| ACK | Acknowledgment | 标志位：确认号有效；连接建立后每个报文都置 1 |
+| FIN | Finish | 标志位：数据发完，请求关闭（四次挥手用） |
+| RST | Reset | 标志位：连接异常，立即强制断开 |
+| seq | Sequence Number，序列号 | 本报文所发数据第一个字节在字节流中的编号 |
+| ack | Acknowledgment Number，确认号 | 期望对方下一个字节的编号，隐含「此前全部收到」 |
+| ISN | Initial Sequence Number，初始序列号 | 握手要协商的核心，双方各自随机生成（见下） |
+
 ```chain
 客户端 SYN | seq=x | 第一次
 服务端 SYN+ACK | seq=y, ack=x+1 | 第二次
 客户端 ACK | seq=x+1, ack=y+1 | 第三次
 ```
+
+> [!note] +1 来历：SYN / FIN 各占一个序号
+> 对方确认号 = 我方 seq + 1。第二次握手 ack=x+1 即「你的 SYN（第 x 号）我收到了」。
 
 <details>
 <summary>展开三次握手时序图</summary>
@@ -93,7 +108,7 @@ sequenceDiagram
 > TCP 全双工，关闭需双向各发 FIN/ACK。服务端收到 FIN 先回 ACK，待自身数据发完再发 FIN，故 ACK 与 FIN 分开 → 四次。
 
 > [!tip] TIME_WAIT 与 2MSL
-> 主动关闭方保持 2MSL：确保最后 ACK 抵达，并让旧报文消亡避免新连接误收。
+> 主动关闭方保持 2MSL（MSL = Maximum Segment Lifetime，报文最大生存时间）：确保最后 ACK 抵达，并让旧报文消亡避免新连接误收。
 
 > [!warning] TIME_WAIT 堆积
 > 主动关闭方端口耗尽 → 调 `tcp_tw_reuse` / `SO_REUSEADDR` 或改长连接。
