@@ -16,7 +16,7 @@ aliases: [AbstractQueuedSynchronizer, AQS 框架]
 面试问答 | 高频考点 | 复盘
 ```
 
-AQS(AbstractQueuedSynchronizer)是 JUC 同步器基石 → 用 volatile int state + CLH 队列变体 → 抢锁失败入队 park、释放时 unpark 后继 → 子类只重写 tryAcquire/tryRelease → 支撑 [[ReentrantLock]]/[[Semaphore]]/[[CountDownLatch]]。
+AQS(AbstractQueuedSynchronizer)是 JUC 同步器基石 → 用 volatile int state + CLH 队列变体 → 抢锁失败入队 park、释放时 unpark 后继 → 子类只重写 tryAcquire/tryRelease → 支撑 [[ReentrantLock]]、Semaphore、CountDownLatch。
 
 ## 核心结构
 

@@ -8,5 +8,3 @@ category: redis
 内存数据库与缓存。
 
 - [[Redis持久化机制]]
-
-- [[Redis 数据类型]]

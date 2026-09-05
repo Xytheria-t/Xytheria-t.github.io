@@ -217,7 +217,6 @@ java -Xms4g -Xmx4g -XX:+UseG1GC \
 > [!tip] 先定目标再选收集器
 > 吞吐优先（批处理）→ Parallel；停顿可控（在线服务）→ G1；超大堆 + 亚毫秒延迟 → ZGC。目标定了，多数参数让自适应机制自己收敛。
 
-## 详节
 
 <details>
 <summary>面试问答 (7题)</summary>
