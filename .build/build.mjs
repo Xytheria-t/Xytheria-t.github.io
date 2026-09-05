@@ -654,6 +654,12 @@ const TPL_MANIFEST = [
   '48-js-fx.js',         // 交互层接线：ripple/halo/磁吸/指针跟随光晕（FINE_HOVER 闸门后）
   '90-end.html',         // 启动行 + </script></body></html>
 ];
+// 清单外文件不参与拼装 = 静默丢代码：tpl 目录内容必须与清单一致，多一个文件就炸构建
+const _tplOnDisk = readdirSync(TPL_DIR);
+const _unregistered = _tplOnDisk.filter(f => !TPL_MANIFEST.includes(f));
+if (_unregistered.length) {
+  throw new Error('tpl/ 有清单未登记的模块（不会参与拼装，静默丢代码）: ' + _unregistered.join(', ') + ' → 登记进 TPL_MANIFEST');
+}
 const READER_HTML = TPL_MANIFEST.map((f) => readFileSync(TPL_DIR + '/' + f, 'utf8')).join('');
 
 emit();

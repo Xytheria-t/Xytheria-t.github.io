@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const steps = ['check.mjs', 'verify-groups.mjs', 'verify-mastery.mjs', 'verify-spans.mjs', 'verify-health.mjs'];
+const steps = ['check.mjs', 'verify-features.mjs', 'verify-groups.mjs', 'verify-mastery.mjs', 'verify-spans.mjs', 'verify-health.mjs'];
 let failed = 0;
 for (const s of steps) {
   console.log('\n========== ' + s + ' ==========');
