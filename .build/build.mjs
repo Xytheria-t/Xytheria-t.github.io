@@ -55,7 +55,6 @@ const ACCENT = {
   mysql: '#2979FF',                 // 亮蓝 · MySQL
   redis: '#FF1744',                 // 鲜红 · Redis
   leetcode: '#FFD600',              // 金黄 · LeetCode
-  study: '#00E5FF',                 // 明青 · Study
   projects: '#FF4081',              // 玫红 · Projects
 };
 const ACCENT_INK = {
@@ -70,12 +69,11 @@ const ACCENT_INK = {
   mysql: '#1E5FD8',
   redis: '#C51162',
   leetcode: '#F5A600',
-  study: '#00A5BC',
   projects: '#C60055',
 };
 const accentOf = (cat) => ACCENT[cat] || '#C9B08A';
 const accentInkOf = (cat) => ACCENT_INK[cat] || '#8A6D3B';
-const CAT_LABEL = { root:'Overview', 'java-collection':'Collections', 'javase':'JavaSE', jvm:'JVM', juc:'Concurrency', architecture:'Architecture', mysql:'MySQL', redis:'Redis', leetcode:'LeetCode', study:'Study', 'system-design':'System Design', projects:'Projects', network:'Network' };
+const CAT_LABEL = { root:'Overview', 'java-collection':'Collections', 'javase':'JavaSE', jvm:'JVM', juc:'Concurrency', architecture:'Architecture', mysql:'MySQL', redis:'Redis', leetcode:'LeetCode', 'system-design':'System Design', projects:'Projects', network:'Network' };
 
 // 卷（首页根墙分区）—— 数组顺序 = 卷序；cats 顺序 = 卷内位次
 // layout = 卷目录带版式（4 种词汇表）：tiles 磁贴墙 / spread 对开页 / feature 大标页 / index 索引列表；缺省 tiles
@@ -84,8 +82,7 @@ const GROUP = [
   { num:'Ⅱ', name:'架构与系统设计', cats:['architecture','system-design','network'], layout:'spread' },
   { num:'Ⅲ', name:'数据存储',     cats:['mysql','redis'],                   layout:'feature' },
   { num:'Ⅳ', name:'算法',         cats:['leetcode'],                        layout:'index' },
-  { num:'Ⅴ', name:'学习认知',     cats:['study'],                           layout:'index' },
-  { num:'Ⅵ', name:'简历项目',     cats:['projects'],                        layout:'feature' },
+  { num:'Ⅴ', name:'简历项目',     cats:['projects'],                        layout:'feature' },
 ];
 const GROUP_OF = {};
 GROUP.forEach(function(g, gi){
