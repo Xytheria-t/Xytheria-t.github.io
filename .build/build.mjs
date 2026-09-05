@@ -225,10 +225,6 @@ function renderMarkdown(body) {
     (_, code) => renderBranch(unescape(code))
   );
   html = html.replace(
-    /<pre><code class="language-vocab">([\s\S]*?)<\/code><\/pre>/g,
-    (_, code) => renderVocab(unescape(code))
-  );
-  html = html.replace(
     /<pre><code class="language-mermaid">([\s\S]*?)<\/code><\/pre>/g,
     (_, code) => {
       const raw = unescape(code);
@@ -317,55 +313,6 @@ function renderChain(src) {
   const chainCls = ['chain'];
   if (!hasCaption && !hasTrigger) chainCls.push('chain-simple');
   return `<div class="${chainCls.join(' ')}"><div class="chain-row">${parts.join('')}</div></div>`;
-}
-
-// ---- vocab (词牌网格) ----
-// 语法：一行一词，竖线分字段  词 | 音标 | 词性 | 释义 | 搭配 | 例句（后三字段可省）
-//       `# 2026-08` 起一个分组，渲染成 h2 进脊线；「批次 · N 词」由这儿自动补
-const _RN = ['', 'Ⅰ', 'Ⅱ', 'Ⅲ', 'Ⅳ', 'Ⅴ', 'Ⅵ', 'Ⅶ', 'Ⅷ', 'Ⅸ', 'Ⅹ'];
-const _RN_T = ['', 'Ⅹ', 'ⅩⅩ', 'ⅩⅩⅩ'];
-function _roman(n) {
-  if (n <= 0 || n > 39) return String(n);
-  return _RN_T[Math.floor(n / 10)] + _RN[n % 10];
-}
-
-function renderVocab(src) {
-  const groups = [];
-  let cur = null;
-  for (const line of src.split('\n')) {
-    const t = line.trim();
-    if (!t) continue;
-    if (t.startsWith('#')) {
-      cur = { title: t.replace(/^#+\s*/, ''), cards: [] };
-      groups.push(cur);
-      continue;
-    }
-    const f = t.split('|').map((s) => s.trim());
-    if (!f[0]) continue;
-    if (!cur) { cur = { title: '', cards: [] }; groups.push(cur); }
-    cur.cards.push({ w: f[0], ph: f[1] || '', pos: f[2] || '', def: f[3] || '', coll: f[4] || '', ex: f[5] || '' });
-  }
-  return groups.map(function (g) {
-    const cards = g.cards.map(function (c, i) {
-      const hint = [c.def && '释义', c.coll && '搭配', c.ex && '例句'].filter(Boolean).join(' · ') || '点开查看';
-      let body = '';
-      if (c.def) body += '<div class="vd">' + _esc(c.def) + '</div>';
-      if (c.coll) body += '<div class="vr"><span class="vk">搭配</span>' + _esc(c.coll) + '</div>';
-      if (c.ex) body += '<div class="vr"><span class="vk">例</span><span class="ve">' + _esc(c.ex) + '</span></div>';
-      return '<details class="vcard"><summary data-hint="' + _esc(hint) + '">'
-        + '<span class="vn">' + _roman(i + 1) + '</span>'
-        + '<span class="vw">' + _esc(c.w) + '</span>'
-        + (c.ph ? '<span class="vp">' + _esc(c.ph) + '</span>' : '')
-        + (c.pos ? '<span class="vpos">' + _esc(c.pos) + '</span>' : '')
-        + '</summary><div class="vb">' + body + '</div></details>';
-    }).join('');
-    const head = g.title ? '<h2>' + _esc(g.title) + ' 批次 · ' + g.cards.length + ' 词</h2>' : '';
-    const grid = '<div class="vg">' + cards + '</div>';
-    // 整批可折叠：summary 里塞 h2，脊线照常识别；默认展开，按需收起
-    return head
-      ? '<details class="vfold" open><summary>' + head + '</summary>' + grid + '</details>'
-      : grid;
-  }).join('');
 }
 
 function renderBranch(src) {
@@ -500,7 +447,7 @@ function renderGantt(src) {
   return html;
 }
 
-// summary 里若已是构建期渲染好的 HTML（vcard / vfold / think-fold 这类），原样放行；
+// summary 里若已是构建期渲染好的 HTML（think-fold 这类），原样放行；
 // 手写 summary 才转义，挡住正文里裸写的 < 。
 // 注：整篇笔记最终是 innerHTML 灌进 stage 的，此处转义只为排版正确，没有安全意义。
 const _SUMMARY_HAS_TAG = /<\/?[a-zA-Z][^>]*>/;
