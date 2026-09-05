@@ -389,14 +389,17 @@ body::after{content:"";position:fixed;inset:0;z-index:1;pointer-events:none;opac
 .art td:first-child{padding-left:18px}
 .art td:last-child{padding-right:18px}
 /* callout — badge + corner accent */
-.callout{position:relative;margin:2.2rem 20px 1.9rem;padding:20px 22px 16px;border-radius:14px;font-size:15px;line-height:1.72;
+.callout{--cr:14px;position:relative;margin:2.2rem 20px 1.9rem;padding:20px 22px 16px;border-radius:var(--cr);font-size:15px;line-height:1.72;
   background:#fff;border:1px solid var(--line);overflow:visible;
   box-shadow:0 1px 2px rgba(0,0,0,.03),0 14px 34px -26px rgba(0,0,0,.28);
   transition:box-shadow .3s var(--ease),transform .3s var(--ease),border-color .3s var(--ease)}
-.callout::before{content:"";position:absolute;left:0;top:0;bottom:0;width:1px;border-radius:14px 0 0 14px;
-  background:linear-gradient(180deg,var(--accent-c) 0%,color-mix(in srgb,var(--accent-c) 30%,transparent) 60%,transparent 100%);pointer-events:none}
-.callout::after{content:"";position:absolute;left:0;top:0;right:0;height:1px;border-radius:14px 14px 0 0;
-  background:linear-gradient(90deg,var(--accent-c) 0%,color-mix(in srgb,var(--accent-c) 45%,transparent) 55%,transparent 92%);pointer-events:none}
+/* accent 线画在整块 overlay 的背景上随圆角裁弯：两根 1px 直边 + 一段径向圆弧补左上角
+   （1px 细条自身写 border-radius 会被缩放规则缩成直角；只裁直边则圆弧段空缺） */
+.callout::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:
+    radial-gradient(circle at var(--cr) var(--cr),transparent 0 calc(var(--cr) - 1px),var(--accent-c) calc(var(--cr) - .5px) calc(var(--cr) - .1px),transparent calc(var(--cr) + .4px)) left top/var(--cr) var(--cr) no-repeat,
+    linear-gradient(180deg,var(--accent-c) 0%,color-mix(in srgb,var(--accent-c) 30%,transparent) 60%,transparent 100%) left top/1px 100% no-repeat,
+    linear-gradient(90deg,var(--accent-c) 0%,color-mix(in srgb,var(--accent-c) 45%,transparent) 55%,transparent 92%) left top/100% 1px no-repeat}
 .callout:hover{transform:translateY(-2px);
   border-color:color-mix(in srgb,var(--accent-c) 35%,var(--line));
   box-shadow:0 2px 5px rgba(0,0,0,.04),0 22px 50px -30px color-mix(in srgb,var(--accent-c) 45%,rgba(0,0,0,.45))}
@@ -415,12 +418,10 @@ body::after{content:"";position:fixed;inset:0;z-index:1;pointer-events:none;opac
   stroke:var(--accent-c);stroke-width:2.2;flex:none}
 .callout .ct::before{display:none}
 /* 嵌套 callout：缩进、收紧留白、字号略小，避免撑破外层 */
-.callout .callout{margin:1.1rem 0 .8rem;padding:14px 18px 12px;border-radius:10px;font-size:14.5px;line-height:1.7;
+.callout .callout{--cr:10px;margin:1.1rem 0 .8rem;padding:14px 18px 12px;border-radius:var(--cr);font-size:14.5px;line-height:1.7;
   background:color-mix(in srgb,var(--accent-c) 4%,#fff)}
 .callout .callout .ct{top:-9px;left:12px;font-size:10.5px;padding:3px 9px 3px 22px}
 .callout .callout .ct .ci{width:11px;height:11px;left:6px}
-.callout .callout::before{width:1px}
-.callout .callout::after{height:1px}
 .callout .callout .callout-sub{font-size:15.5px;margin:0 0 6px}
 .callout p{margin:0 !important;color:#2C2820 !important;font-size:14.5px !important;line-height:1.72 !important}
 .callout .callout p{font-size:14px !important;line-height:1.68 !important}
