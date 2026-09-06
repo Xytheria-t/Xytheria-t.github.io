@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "dark-glow",
+        "value": "*",
+        "files": [
+          "D:/Work/Vinea/.build/reader.tpl.html"
+        ],
+        "createdAt": "2026-08-29T07:21:04.065Z",
+        "reason": "user confirmed: 既有有意设计，带位移定向投影非 AI 光晕，AGENT.md 允许彩色强调"
+      }
+    ]
+  }
+}
