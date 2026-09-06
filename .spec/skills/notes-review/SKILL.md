@@ -15,7 +15,7 @@ visibility: "project"
 
 ## 流程
 
-1. **机械校验先行**（秒级、零误报）：`node D:/Work/Vinea/.workbuddy/vinea_check.mjs`
+1. **机械校验先行**（秒级、零误报）：`node D:/Work/Vinea/.spec/vinea_check.mjs`
    覆盖：P0 = frontmatter/title 缺失、fence 配对偶数、title 重复；P1 = 死链（**别名感知**，与 build 双链解析同口径）、H1==title、order 冲突、顶部结构、chain 栏数/节点数、编号与泛化（详节/总结/详解）H2、summary 占位/重名、callout 未配色；WARN = 出链稀疏（≤1，仅提示）。
    ⚠️ 改这个脚本时，所有按行匹配的正则必须容忍 `\r?\n`——notes 全是 CRLF，写死 `\n` 会静默失配（检查形同虚设还不报错）。
 2. **人工审查走 4 个并行 Explore 代理**（只报告不修改），按域分：

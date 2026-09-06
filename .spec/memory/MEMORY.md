@@ -5,7 +5,7 @@
 
 ## 会话开头铁律
 - 动 `.build/` 前先读 `PITFALLS.md`。
-- 不写 `.workbuddy/memory/` 日志（目录已废弃）；踩坑记 `PITFALLS.md`。
+- 不写按日期的日志文件；踩坑记 `PITFALLS.md`。
 - 记忆只存长期有效的规范与偏好：不记设计迭代过程、被否方案、已删死代码、单次改动细节。能从代码/文件推导的一律不写。
 
 ## 项目定位
@@ -79,4 +79,4 @@
   - GitHub Pages 用户站根 URL 只认 `index.html`，必须 `cp reader.html index.html`（部署产物里**两份**都要有）
   - 仓库的 `default_workflow_permissions` 默是 `read`，要先 `gh api -X PUT repos/Xytheria-t/Xytheria-t.github.io/actions/permissions/workflow -f default_workflow_permissions=write`（或者 workflow 里 `permissions: contents: write` + 仓库设置改 write）——否则 `peaceiris/actions-gh-pages@v4` 推 gh-pages 时 403
 - 本地 dev 不变（双击 `reader.html` 仍能看）；线上 URL：`https://Xytheria-t.github.io/`
-- 仓库物理：入版本库 = `notes/` 全量、`.build/`（build.mjs、check.mjs、verify-*.mjs、watch.mjs、verify.mjs、package.json、package-lock.json、`tpl/` 模块目录、mermaid.min.js）、`.github/workflows/deploy.yml`、`.gitignore`。不入仓：`.workbuddy/`、`.impeccable/`、`PITFALLS.md`、`study.html`（已迁出）、`reader.html`（build 产物）、`vendor/`（build 时生成）、`node_modules/`、`_deploy/`。
+- 仓库物理：入版本库 = `notes/` 全量、`.build/`（build.mjs、check.mjs、verify-*.mjs、watch.mjs、verify.mjs、package.json、package-lock.json、`tpl/` 模块目录、mermaid.min.js）、`.spec/`、`PITFALLS.md`、`.impeccable/config.json`、`.github/workflows/deploy.yml`、`.gitignore`。不入仓：`reader.html`/`vendor/`（build 产物）、`.build/node_modules/`、`.build/_trash/`、`.impeccable/hook.cache.json`、`_deploy/`、`study.html`（迁出独立存放于 `D:\Tool\Time\time.html`）。

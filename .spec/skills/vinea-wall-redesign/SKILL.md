@@ -11,7 +11,7 @@ display_name_en: "vinea-wall-redesign"
 
 # Vinea 墙改造 / 构建验证闭环
 
-设计规范（配色主权、首页分卷、设计铁律）常驻 `.workbuddy/memory/MEMORY.md`，动视觉前先读它；本篇只讲**怎么改、怎么验**。
+设计规范（配色主权、首页分卷、设计铁律）常驻 `.spec/memory/MEMORY.md`，动视觉前先读它；本篇只讲**怎么改、怎么验**。
 
 ## 铁律
 
@@ -80,6 +80,6 @@ cd <项目根> && node .build/build.mjs && node .build/verify.mjs
 - `MASTERY CHECK OK`（熟练度断言）
 - `SPAN CHECK OK`（每墙 `.ventry` 数 == links 数；「待填子 MOC 仅作警告」是用户没写完的空壳墙，非故障）
 - `HEALTH CHECK OK`（无孤儿、全可达）
-- 收尾 `node .workbuddy/vinea_check.mjs` 应 `ALL CLEAN`
+- 收尾 `node .spec/vinea_check.mjs` 应 `ALL CLEAN`
 
 新领域忘登记 `GROUP` 会落到末尾「其他」卷且 `verify-groups` 判 FAIL——加卷/加类先改 `GROUP`。
