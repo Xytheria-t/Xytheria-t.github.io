@@ -1,4 +1,4 @@
-/* 分组墙断言：把 reader.html 的脚本放进沙箱跑，调用 wallHTML() 检查分卷结构。
+/* 分组墙断言：把 Vinea.html 的脚本放进沙箱跑，调用 wallHTML() 检查分卷结构。
    期望值全部从 NOTES 注入的 group / groupRank 推导，不写死笔记 id。 */
 import { run } from './_harness.mjs';
 

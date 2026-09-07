@@ -1,4 +1,4 @@
-// 各 verify-* 共用的沙箱装配：把 reader.html 的 <script> 塞进 vm 跑一遍，配齐 DOM/localStorage 假货。
+// 各 verify-* 共用的沙箱装配：把 Vinea.html 的 <script> 塞进 vm 跑一遍，配齐 DOM/localStorage 假货。
 // 路径按本文件位置解析（cwd 无关），脚本只读一次。
 import { readFileSync } from 'fs';
 import vm from 'node:vm';
@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
 const PROJ = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const html = readFileSync(resolve(PROJ, 'reader.html'), 'utf8');
+const html = readFileSync(resolve(PROJ, 'Vinea.html'), 'utf8');
 export const script = html.split('<script>')[1].split('</script>')[0];
 
 // 不跑脚本，只把注入的 NOTES 字面量抠出来（比 vm 快，也不受 stub 影响）

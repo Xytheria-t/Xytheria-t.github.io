@@ -13,12 +13,12 @@
 - `arr.map(fn)` 而 `fn` 第二参数语义不是 index → 调用处显式丢弃下标，按 type 兜底别按 truthiness。
 - 往 mermaid 源码预处理注入（`direction`/`title`）不能抢在首行图类型声明之前。
 - 降级为原始源码/占位的渲染分支必须做显性标记（如 `.mm-err` 角标），别只 `console.warn`。
-- 验 CSS 必须 re.search 整个 `reader.html`；`_harness` 的 `script` 只切 `<script>` 段，匹配不到样式。
+- 验 CSS 必须 re.search 整个 `Vinea.html`；`_harness` 的 `script` 只切 `<script>` 段，匹配不到样式。
 - `display:none`（CSS 初始态）+ JS 用 `style.display=''` 显示 → 内联一空样式表立刻接管，块永远空白。显示侧给具体值（`block`/`flex`）。
 - localStorage 结构校验只查必备结构，nullable 状态字段单独类型收编，别当必填判死。
 
 ## 构建管线
-- 手改 `reader.html`（build 产物）→ 跑 `build.mjs` 被 `.build/tpl/` 清单拼接覆盖，表现「改了没生效」。只动 `.build/tpl/` 模块，改完必重跑 build。
+- 手改 `Vinea.html`（build 产物）→ 跑 `build.mjs` 被 `.build/tpl/` 清单拼接覆盖，表现「改了没生效」。只动 `.build/tpl/` 模块，改完必重跑 build。
 - 模板注释里写占位符字面量 → `String.replace` 只换第一处，注释抢占注入，真实占位符留在产物里 → check.mjs vm 直接 SyntaxError（「NOTES 字面量未找到」）。修法：注释别写占位符字面量；build.mjs 注入后有兜底断言（仍含占位符 → 炸构建）。
 - `tpl/` 新增模块文件忘登记 `TPL_MANIFEST` → 文件存在但不参与拼装，静默丢代码。修法：加文件必须同步 build.mjs 清单。
 - 模块拆分/抽离时 `\\s` 漏 cook 成 `\s` → 产物正则全废。回归判据 = 产物与旧版 `cmp` 逐字节相同。
@@ -62,7 +62,7 @@
 
 ## 部署（GitHub Pages）
 - 仓库 `Xytheria-t/Xytheria-t.github.io`（公开用户站）→ Actions 跑 build → 推 `gh-pages` 分支 → Pages 切 `gh-pages`/root serve。仓库的 `default_workflow_permissions` 默认 `read` → `peaceiris/actions-gh-pages@v4` 推 `gh-pages` 时报 `Permission to ... denied to github-actions[bot]` + 403。**修法**：仓库 Settings → Actions → General → Workflow permissions 改 **Read and write permissions**，或 `gh api -X PUT repos/Xytheria-t/Xytheria-t.github.io/actions/permissions/workflow -f default_workflow_permissions=write`。`permissions: contents: write` 在 workflow 文件里也要写。
-- GitHub Pages 用户站（`username.github.io`）根 URL 只认 `index.html`，不认 `reader.html` → 部署产物必须 `cp reader.html _deploy/index.html` 一份，否则首页 404。
+- GitHub Pages 用户站（`username.github.io`）根 URL 只认 `index.html`，不认 `Vinea.html` → 部署产物必须 `cp Vinea.html _deploy/index.html` 一份，否则首页 404。
 - workflow 用了 `on.push.paths` 过滤时**不能同时**用 `workflow_dispatch`（paths 跟 dispatch 在 `on:` 下互斥，YAML 静默接受但 GitHub 拒跑，状态显示 `workflow file issue`、jobs 空）。要么全 push、要么全 dispatch，二选一。
 - workflow 文件本地写 `LF`，git 在 Windows 上常警告「will be replaced by CRLF」——CRLF 也行，但 **BOM (`﻿`, U+FEFF) 不行**。Write 工具产生文件偶尔会带 BOM，save 后 `head -1 | xxd` 校验。
 - workflow `run:` 块里有中文注释/字符串完全 OK（UTF-8），但**多行 block `run: |` 后每行缩进必须 ≥block 起始缩进**，否则 GitHub Actions YAML parser 把它当 step body 而不是 block。

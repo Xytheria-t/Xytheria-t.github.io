@@ -34,9 +34,9 @@ jobs:
       - name: Prepare
         run: |
           mkdir -p _deploy
-          cp reader.html _deploy/
-          # GitHub Pages 用户站只认 index.html；首页软链到 reader.html
-          cp reader.html _deploy/index.html
+          cp Vinea.html _deploy/
+          # GitHub Pages 用户站只认 index.html；首页软链到 Vinea.html
+          cp Vinea.html _deploy/index.html
           cp -r vendor _deploy/
           cp -r notes _deploy/
           touch _deploy/.nojekyll

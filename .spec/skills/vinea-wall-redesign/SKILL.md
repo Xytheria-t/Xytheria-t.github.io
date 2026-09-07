@@ -1,6 +1,6 @@
 ---
 name: vinea-wall-redesign
-description: 改造 Vinea 阅读器(reader.html)的视觉/布局/交互，含 build→verify 闭环与 vm 沙箱验证手法。用于「改首页/墙/卷带/卡片」「调样式交互」「重建 reader.html」。注意 reader.html 是构建产物，绝不能直接改。
+description: 改造 Vinea 阅读器(Vinea.html)的视觉/布局/交互，含 build→verify 闭环与 vm 沙箱验证手法。用于「改首页/墙/卷带/卡片」「调样式交互」「重建 Vinea.html」。注意 Vinea.html 是构建产物，绝不能直接改。
 description_zh: "Vinea 墙改造：构建闭环 + vm 验证 + tpl 结构速查"
 description_en: "Vinea wall redesign: build loop, vm verify, tpl internals"
 agent_created: true
@@ -15,11 +15,11 @@ display_name_en: "vinea-wall-redesign"
 
 ## 铁律
 
-**`reader.html` 是构建产物，禁止直接编辑。** 唯一正确流程：
+**`Vinea.html` 是构建产物，禁止直接编辑。** 唯一正确流程：
 
 1. 改**样式 / 交互 / 布局 / JS** → `.build/tpl/` 对应模块（按热区切分，文件头注释 = 该模块铁律，先读它）
 2. 改**构建期常量与注入**（`ACCENT`/`ACCENT_INK`、`GROUP` 分卷表、`CAT_LABEL`、mermaid 拷贝）→ `.build/build.mjs`
-3. `node .build/build.mjs` → 按清单拼接重新生成 `reader.html`，并把 `.build/mermaid.min.js` 复制到 `vendor/`
+3. `node .build/build.mjs` → 按清单拼接重新生成 `Vinea.html`，并把 `.build/mermaid.min.js` 复制到 `vendor/`
 4. `node .build/verify.mjs` → 全套校验（见文末）
 
 `build.mjs` 按 `TPL_MANIFEST` 清单序**纯拼接** `.build/tpl/` 模块，替换 `40-js-core.js` 里的 `/*__NOTES__*/` 与 `/*__ROOT__*/` 两个占位符后落盘。三个坑：新模块文件**必须登记进清单**（漏登记 = 静默丢代码）；任何模块的**注释里别写占位符字面量**（`String.replace` 只换第一处，注释会抢占注入——build 有兜底断言拦这个）；模板里没有别的注入点，别自己发明第三个。
@@ -32,7 +32,7 @@ display_name_en: "vinea-wall-redesign"
 
 ## 墙是运行时生成的 —— grep 产物会误判
 
-`wallHTML(n)` 在浏览器里按需渲染，构建只把函数源码内联进 `reader.html`。卡片、卷带、`.ventry` 都不在落盘 HTML 里，**grep 产物永远匹配不到**——别用 grep 产物判断墙渲染对错，必须在 vm 里真跑 `wallHTML`。
+`wallHTML(n)` 在浏览器里按需渲染，构建只把函数源码内联进 `Vinea.html`。卡片、卷带、`.ventry` 都不在落盘 HTML 里，**grep 产物永远匹配不到**——别用 grep 产物判断墙渲染对错，必须在 vm 里真跑 `wallHTML`。
 
 项目已备验证脚本 `verify-spans.mjs`：对每个 MOC 调 `wallHTML`，断言 `.ventry` 数 == links 数。写自己的验证时**复用 `_harness.mjs` 的 `run()`**（DOM/localStorage 假货配齐），跑完顶层脚本后在同一上下文里继续求值：
 

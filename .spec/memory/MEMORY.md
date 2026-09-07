@@ -9,20 +9,20 @@
 - 记忆只存长期有效的规范与偏好：不记设计迭代过程、被否方案、已删死代码、单次改动细节。能从代码/文件推导的一律不写。
 
 ## 项目定位
-- 离线卡片式阅读器，分发形态 = 文件夹：根 `reader.html` + 同目录 `vendor/`（双击即开、不跑服务器）。内容 = `notes/*.md`。个人自用、无多用户；**同时部署到 `https://Xytheria-t.github.io/` 作个人只读镜像**（公开仓库，URL 不主动外传 = 事实隐私）。
+- 离线卡片式阅读器，分发形态 = 文件夹：根 `Vinea.html` + 同目录 `vendor/`（双击即开、不跑服务器）。内容 = `notes/*.md`。个人自用、无多用户；**同时部署到 `https://Xytheria-t.github.io/` 作个人只读镜像**（公开仓库，URL 不主动外传 = 事实隐私）。
 - `mermaid` 外置 `vendor/mermaid.min.js` 懒加载（不内联/CDN）；`marked`/`highlight.js` 仅构建期依赖。
-- 必保 feature（改 `reader.html` 不得误删）：`#spine` 迷你地图、`#companion` 章节胶囊、`[[双链]]` hover 预览、```gantt 渲染、mermaid 折叠懒渲染、代码行号、**鼠标侧键前进/后退**、锚点 `#slug`。已断言化：`.build/verify-features.mjs`（设计刻意变更时先改断言再改实现）。
+- 必保 feature（改 `Vinea.html` 不得误删）：`#spine` 迷你地图、`#companion` 章节胶囊、`[[双链]]` hover 预览、```gantt 渲染、mermaid 折叠懒渲染、代码行号、**鼠标侧键前进/后退**、锚点 `#slug`。已断言化：`.build/verify-features.mjs`（设计刻意变更时先改断言再改实现）。
 - **导航模型（单一驱动源 = 浏览器历史）**：`go()` 用 `pushState({slug, vi:idx})` 入历史；侧键/浏览器前后退按钮交给原生导航；Vinea **只监听 `popstate` 渲染**，靠 `e.state.vi` 精确定位栈下标。Vinea 内部 `hist[]` 是浏览器历史的镜像。细节与 4 个坑见 PITFALLS·导航。
 - 侧键**不接管**（`mousedown` handler 已删）：`preventDefault()` 对 X1/X2 拦截不可靠，接管会导致一次按键退两级。代价：退到历史栈底时浏览器会切标签（正常浏览器行为）。
 - Vinea 是写笔记的工具，不进简历。简历第一个真实项目是 **EasyOrange**（后端，缓存与 DB 一致性是核心难点）。
 
 ## 构建铁律
-- ⚠️ 绝不手改 `reader.html`（build 产物，跑 `build.mjs` 由 `.build/tpl/` 模块按清单拼接覆盖，手改必丢）。改样式/交互只动 `.build/tpl/` 对应模块（按热区切分，**模块头注释 = 该模块铁律，动手前先读**）；新增模块必须登记 `build.mjs` 的 `TPL_MANIFEST`；改完必 `node .build/build.mjs` 重生成 `reader.html`。（详见 PITFALLS）
-- 改内容 → `notes/*.md`；改样式/交互 → `.build/tpl/`；重建 → `node .build/build.mjs` → `reader.html`。全由 AI 跑，用户不碰命令行、不建 `.bat`。
-- 预览面板读产物 `reader.html`，不直接读 `notes/*.md`；改笔记后必重跑 build，预览才刷新（漏跑表现「改了没生效」，非缓存）。
+- ⚠️ 绝不手改 `Vinea.html`（build 产物，跑 `build.mjs` 由 `.build/tpl/` 模块按清单拼接覆盖，手改必丢）。改样式/交互只动 `.build/tpl/` 对应模块（按热区切分，**模块头注释 = 该模块铁律，动手前先读**）；新增模块必须登记 `build.mjs` 的 `TPL_MANIFEST`；改完必 `node .build/build.mjs` 重生成 `Vinea.html`。（详见 PITFALLS）
+- 改内容 → `notes/*.md`；改样式/交互 → `.build/tpl/`；重建 → `node .build/build.mjs` → `Vinea.html`。全由 AI 跑，用户不碰命令行、不建 `.bat`。
+- 预览面板读产物 `Vinea.html`，不直接读 `notes/*.md`；改笔记后必重跑 build，预览才刷新（漏跑表现「改了没生效」，非缓存）。
 - 免手动重编：`node .build/watch.mjs`（监听 `notes/*.md` → 200ms 防抖重编，重编后自动跑 `verify.mjs` 全套校验；watch 不碰 git，commit 由 AI 会话手动做）。
 - `tpl/` 目录每个模块都是已 cook 的纯文件：正则直接写 `\s` 不写 `\\s`；NOTES/ROOT_ID 注入点只在 `40-js-core.js`（占位符字面量别出现在任何注释里，会抢占 replace 第一处命中——build 有断言拦截）。`.build/mermaid.min.js` → 复制到 `vendor/`。
-- 构建不碰 git（原「构建后自动 commit」已关闭，build.mjs 只产出 `reader.html`）。
+- 构建不碰 git（原「构建后自动 commit」已关闭，build.mjs 只产出 `Vinea.html`）。
 - 校验入口就一个：`node .build/verify.mjs`（串起 check + features + groups + mastery + spans + health，任一失败整体非 0）。`verify-features` 断言必保 feature/导航模型/CSS 铁律/xilu 清零（JS 断言跑在剥注释的 tpl 模块拼接上，防注释关键词假阳）；`verify-groups` 拦「新领域忘登记 GROUP」并断言卷版式/顺序/待垦；`verify-spans` 对全部 MOC 墙数 `.ventry`（= links 数且无 folio）。
 
 ## 内容结构 & 命名
@@ -73,10 +73,10 @@
 ## 公网部署（GitHub Pages）
 - 仓库：`Xytheria-t/Xytheria-t.github.io`（公开，Personal Site 仓库）
 - 触发：`push` 到 `master`（兼容 `main`）改动 `notes/**`、`.build/**`、`.github/workflows/deploy.yml` 时跑 `.github/workflows/deploy.yml`
-- Workflow：Actions checkout → setup-node 22 + npm cache → `npm ci --prefix .build` → `node .build/build.mjs` → `node .build/check.mjs && node .build/verify-groups.mjs` → 准备 `_deploy/`（含 `cp reader.html _deploy/index.html`）→ `peaceiris/actions-gh-pages@v4` 强推 `gh-pages` 分支
+- Workflow：Actions checkout → setup-node 22 + npm cache → `npm ci --prefix .build` → `node .build/build.mjs` → `node .build/check.mjs && node .build/verify-groups.mjs` → 准备 `_deploy/`（含 `cp Vinea.html _deploy/index.html`）→ `peaceiris/actions-gh-pages@v4` 强推 `gh-pages` 分支
 - Pages 配置：Source = `gh-pages` branch / root
 - 关键坑（详见 PITFALLS·部署）：
-  - GitHub Pages 用户站根 URL 只认 `index.html`，必须 `cp reader.html index.html`（部署产物里**两份**都要有）
+  - GitHub Pages 用户站根 URL 只认 `index.html`，必须 `cp Vinea.html index.html`（部署产物里**两份**都要有）
   - 仓库的 `default_workflow_permissions` 默是 `read`，要先 `gh api -X PUT repos/Xytheria-t/Xytheria-t.github.io/actions/permissions/workflow -f default_workflow_permissions=write`（或者 workflow 里 `permissions: contents: write` + 仓库设置改 write）——否则 `peaceiris/actions-gh-pages@v4` 推 gh-pages 时 403
-- 本地 dev 不变（双击 `reader.html` 仍能看）；线上 URL：`https://Xytheria-t.github.io/`
-- 仓库物理：入版本库 = `notes/` 全量、`.build/`（build.mjs、check.mjs、verify-*.mjs、watch.mjs、verify.mjs、package.json、package-lock.json、`tpl/` 模块目录、mermaid.min.js）、`.spec/`、`PITFALLS.md`、`.impeccable/config.json`、`.github/workflows/deploy.yml`、`.gitignore`。不入仓：`reader.html`/`vendor/`（build 产物）、`.build/node_modules/`、`.build/_trash/`、`.impeccable/hook.cache.json`、`_deploy/`、`study.html`（迁出独立存放于 `D:\Tool\Time\time.html`）。
+- 本地 dev 不变（双击 `Vinea.html` 仍能看）；线上 URL：`https://Xytheria-t.github.io/`
+- 仓库物理：入版本库 = `notes/` 全量、`.build/`（build.mjs、check.mjs、verify-*.mjs、watch.mjs、verify.mjs、package.json、package-lock.json、`tpl/` 模块目录、mermaid.min.js）、`.spec/`、`PITFALLS.md`、`.impeccable/config.json`、`.github/workflows/deploy.yml`、`.gitignore`。不入仓：`Vinea.html`/`vendor/`（build 产物）、`.build/node_modules/`、`.build/_trash/`、`.impeccable/hook.cache.json`、`_deploy/`、`study.html`（迁出独立存放于 `D:\Tool\Time\time.html`）。

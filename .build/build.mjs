@@ -40,7 +40,7 @@ hljs.registerLanguage('plaintext', plaintext); hljs.registerLanguage('text', pla
 const __DIR = dirname(fileURLToPath(import.meta.url)); // .build
 const PROJ = resolve(__DIR, '..');
 const ROOT = resolve(PROJ, 'notes');
-const OUT = resolve(PROJ, 'reader.html');
+const OUT = resolve(PROJ, 'Vinea.html');
 
 // 鲜艳高饱和配色（用户明确要求）。色相分离 + 高饱和，不做莫兰迪降饱和处理。
 const ACCENT = {
@@ -55,6 +55,7 @@ const ACCENT = {
   network: '#00B0FF',               // 天蓝 · Network
   mysql: '#2979FF',                 // 亮蓝 · MySQL
   redis: '#FF1744',                 // 鲜红 · Redis
+  mq: '#D500F9',                    // 品红 · MQ
   leetcode: '#FFD600',              // 金黄 · LeetCode
   projects: '#FF4081',              // 玫红 · Projects
 };
@@ -70,19 +71,20 @@ const ACCENT_INK = {
   network: '#0081CB',
   mysql: '#1E5FD8',
   redis: '#C51162',
+  mq: '#AA00AA',
   leetcode: '#F5A600',
   projects: '#C60055',
 };
 const accentOf = (cat) => ACCENT[cat] || '#C9B08A';
 const accentInkOf = (cat) => ACCENT_INK[cat] || '#8A6D3B';
-const CAT_LABEL = { root:'Overview', 'java-collection':'Collections', 'javase':'JavaSE', jvm:'JVM', juc:'Concurrency', spring:'Spring', architecture:'Architecture', mysql:'MySQL', redis:'Redis', leetcode:'LeetCode', 'system-design':'System Design', projects:'Projects', network:'Network' };
+const CAT_LABEL = { root:'Overview', 'java-collection':'Collections', 'javase':'JavaSE', jvm:'JVM', juc:'Concurrency', spring:'Spring', architecture:'Architecture', mysql:'MySQL', redis:'Redis', mq:'MQ', leetcode:'LeetCode', 'system-design':'System Design', projects:'Projects', network:'Network' };
 
 // 卷（首页根墙分区）—— 数组顺序 = 卷序；cats 顺序 = 卷内位次
 // layout = 卷目录带版式（4 种词汇表）：tiles 磁贴墙 / spread 对开页 / feature 大标页 / index 索引列表；缺省 tiles
 const GROUP = [
   { num:'Ⅰ', name:'Java 生态',    cats:['javase','java-collection','jvm','juc','spring'], layout:'tiles' },
   { num:'Ⅱ', name:'架构与系统设计', cats:['architecture','system-design','network'], layout:'spread' },
-  { num:'Ⅲ', name:'数据存储',     cats:['mysql','redis'],                   layout:'feature' },
+  { num:'Ⅲ', name:'中间件',        cats:['mysql','redis','mq'],              layout:'feature' },
   { num:'Ⅳ', name:'算法',         cats:['leetcode'],                        layout:'index' },
   { num:'Ⅴ', name:'简历项目',     cats:['projects'],                        layout:'feature' },
 ];
@@ -627,10 +629,10 @@ function emit(){
   console.log('built', Object.keys(NOTES).length, 'notes ->', OUT, '| root:', ROOT_ID, '| mermaid -> vendor/mermaid.min.js (lazy)');
 }
 
-// 自动提交已关闭（用户决定手动 commit）：构建只产出 reader.html，不碰 git。
+// 自动提交已关闭（用户决定手动 commit）：构建只产出 Vinea.html，不碰 git。
 
 // ---------------- reader template（外置 tpl/ 目录，按清单序纯拼接；两个 /*__XX__*/ 占位符在 js-core.js，由 emit() 注入） ----------------
-// 铁律：TPL_MANIFEST 数组序 = 字节序；改模板只动 .build/tpl/ 下的模块文件，绝不手改产物 reader.html。
+// 铁律：TPL_MANIFEST 数组序 = 字节序；改模板只动 .build/tpl/ 下的模块文件，绝不手改产物 Vinea.html。
 // 模块都按热区切（墙/正文/导航/特效…），改哪块只读哪块；新增模块必须登记进清单，漏登记 = 静默丢代码。
 const TPL_DIR = PROJ + '/.build/tpl';
 const TPL_MANIFEST = [

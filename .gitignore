@@ -1,5 +1,5 @@
 # 构建产物（可由 notes + .build 重新生成）
-/reader.html
+/Vinea.html
 /vendor/
 
 # 依赖 & 大型本地副本

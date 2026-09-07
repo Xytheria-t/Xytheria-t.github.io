@@ -16,14 +16,14 @@ visibility: "project"
 - **原子笔记基准 = `notes/ThreadPoolExecutor.md`**
 - **MOC 基准 = `notes/线程池.md`**（正文 = 一句定位 + `- [[子卡片]]` 列表）
 
-笔记只写 markdown + frontmatter，不碰 HTML / JS；重建跑 `node .build/build.mjs`（仓库根）→ `reader.html` + 同目录 `vendor/`（文件夹分发，双击即开）。
+笔记只写 markdown + frontmatter，不碰 HTML / JS；重建跑 `node .build/build.mjs`（仓库根）→ `Vinea.html` + 同目录 `vendor/`（文件夹分发，双击即开）。
 
 ## 骨架
 
 ````
 ---
 title: <标题>
-category: <子类>      # java-collection / javase / jvm / juc / spring / architecture / system-design / network / mysql / redis / leetcode / projects
+category: <子类>      # java-collection / javase / jvm / juc / spring / architecture / system-design / network / mysql / redis / mq / leetcode / projects
 order: <位次>         # 可选：墙上显式排序 1..n，覆盖权重；同墙笔记要排学习路径时加
 aliases: [旧名]       # 可选，兼容旧 [[双链]]
 featured: <子笔记标题> # MOC 专属：锁定核心子卡在墙上置顶（pinned），可写原文标题或别名，build 自动 slugify
@@ -139,7 +139,7 @@ featured: ThreadPoolExecutor   # 原文标题或别名，build 自动 slugify �
 
 ## 子类主题色
 
-与 `build.mjs` 的 `ACCENT` 对应（改色去那改，这里只读）：java-collection 青绿 / javase 翠绿 / jvm 珊瑚红 / juc 亮紫 / spring 亮青 / architecture·system-design 亮橙 / network 天蓝 / mysql 亮蓝 / redis 鲜红 / leetcode 金黄 / projects 玫红
+与 `build.mjs` 的 `ACCENT` 对应（改色去那改，这里只读）：java-collection 青绿 / javase 翠绿 / jvm 珊瑚红 / juc 亮紫 / spring 亮青 / architecture·system-design 亮橙 / network 天蓝 / mysql 亮蓝 / redis 鲜红 / mq 品红 / leetcode 金黄 / projects 玫红
 
 ## 收尾
 

@@ -1,12 +1,12 @@
 // 必保 feature 断言：把散文铁律（workbuddy MEMORY·必保 feature / 导航模型 / CSS 铁律 / xilu 清零）固化成检查。
-// 断言对象：产物 reader.html（DOM/CSS/注入完整性）+ tpl/ JS 模块拼接（剥注释后匹配，防注释关键词污染）+ build.mjs（构建期渲染器）。
+// 断言对象：产物 Vinea.html（DOM/CSS/注入完整性）+ tpl/ JS 模块拼接（剥注释后匹配，防注释关键词污染）+ build.mjs（构建期渲染器）。
 // 设计主权：这些断言编码的是「当前设计」。若某 feature 被刻意移除，先改这里再改实现（PITFALLS·verify 断言已被移除的 UI）。
 import { readFileSync, existsSync, readdirSync } from 'fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const product = readFileSync(resolve(root, 'reader.html'), 'utf8');
+const product = readFileSync(resolve(root, 'Vinea.html'), 'utf8');
 const buildSrc = readFileSync(resolve(root, '.build', 'build.mjs'), 'utf8');
 
 // JS 断言跑在「tpl JS 模块拼接 + 剥注释」上：NOTES 数据不在其中（无内容污染），注释里的 pushState/back 等关键词必须剥掉
