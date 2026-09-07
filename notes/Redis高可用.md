@@ -66,13 +66,13 @@ excerpt: 单机挂了数据和服务一起消失，高可用靠冗余：主从�
 |---|---|---|
 | ① 从库上线 | 发 `PSYNC ? -1`：`?` 表示不知道主库的 replid，`-1` 表示从头同步 | ? / -1 |
 | ② 主库应答 | 回 `+FULLRESYNC ABC 0`，附上自己的 replid=ABC | ABC / 0 |
-| ③ 生成快照 | BGSAVE 出 RDB；期间的写命令（如 `SET k1 v1`，25 字节）暂存**专属缓冲区**，offset 涨到 25 | ABC / 25 |
+| ③ 生成快照 | BGSAVE 出 RDB；期间的写命令（如 `SET k1 v1`，序列化后 29 字节）暂存**专属缓冲区**，offset 涨到 29 | ABC / 29 |
 | ④ 传输加载 | 发送 RDB，从库清空旧数据后加载 | ABC / 25 |
-| ⑤ 补发增量 | 把缓冲区里积压的 25 字节补发，从库回放到 offset 25 | ABC / 25 |
+| ⑤ 补发增量 | 把缓冲区里积压的 29 字节补发，从库回放到 offset 29 | ABC / 29 |
 | ⑥ 稳态 | 之后每条写命令执行完立刻传播给所有从库，offset 同步增长 | ABC / 持续增长 |
 
 <details>
-<summary>展开时序图</summary>
+<summary>展开主从首次同步时序图</summary>
 
 ```mermaid
 sequenceDiagram
@@ -134,7 +134,7 @@ sequenceDiagram
 选出后：升主 → 通知其余从库改跟新主 → 通知客户端新主地址 → 旧主恢复后自动降级为新主的从库。
 
 <details>
-<summary>展开时序图</summary>
+<summary>展开哨兵故障转移时序图</summary>
 
 ```mermaid
 sequenceDiagram
@@ -162,7 +162,7 @@ sequenceDiagram
 
 - 路由：`slot = CRC16(key) mod 16384`（CRC16 对 key 内容算出一个整数），客户端向任意节点发请求，key 不归它管时会收到 `MOVED` 重定向去正确的节点。
 - 为什么是 16384：节点间心跳包要携带自己负责的槽位表，用 bitmap 表示——16384 槽 = 2KB；若用 65536 槽 = 8KB，心跳体积白涨，而集群规模上限约 1000 节点，16384 够用。
-- 多 key 操作（`MGET`、事务、Lua）要求 key 全在同一槽：用 **hash tag** 强制——key 中 `{}` 里的部分参与算槽，如 `{user1000}.name` 与 `{user1000}.age` 必同槽。
+- 多 key 操作（`MGET`、事务、[[Redis Lua 脚本]]）要求 key 全在同一槽：用 **hash tag** 强制——key 中 `{}` 里的部分参与算槽，如 `{user1000}.name` 与 `{user1000}.age` 必同槽。
 
 <details>
 <summary>展开路由流程图</summary>
