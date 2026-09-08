@@ -36,18 +36,6 @@ aliases: [泛型, 泛型擦除, generics]
 
 ## 泛型语法速查
 
-| 形态 | 写法 | 说明 |
-|---|---|---|
-| 泛型类 | `class Box<T> { T value; }` | T 随对象确定 |
-| 泛型接口 | `interface Comparable<T>` | 实现类指定 T |
-| 泛型方法 | `<T> T first(List<T> list)` | T 由实参推断 |
-| 多类型参数 | `class Pair<K, V>` | 逗号分隔 |
-| 类型边界 | `<T extends Comparable<T>>` | T 限定为 Comparable 子类 |
-| 原始类型 | `List list = new ArrayList()` | 裸类型，绕过泛型检查 |
-
-> [!warning] 边界只写 extends
-> Java 没有 `<T implements X>` 写法；上界是类还是接口都写 `extends`，多个上界用 `&` 连接：`<T extends Comparable<T> & Serializable>`。
-
 | 字母 | 含义 | 典型位置 |
 |---|---|---|
 | T | Type，类型 | 通用占位 |
@@ -55,6 +43,18 @@ aliases: [泛型, 泛型擦除, generics]
 | K / V | Key / Value | Map |
 | R | Return，返回值 | 方法返回类型 |
 | ? | 未知类型 | 通配符，见下文 |
+
+| 形态 | 写法 | 说明 |
+|---|---|---|
+| 泛型类 | `class Box<T> { T value; }` | T 随对象确定 |
+| 泛型接口 | `interface Comparable<T>` | 实现类指定 T |
+| 泛型方法 | `<T> T first(List<T> list)` | T 由实参推断 |
+| 多类型参数 | `class Pair<K, V>` | 逗号分隔 |
+| 类型边界 | `<T extends Comparable<T>>` | T 限定为上界的子类型 |
+| 原始类型 | `List list = new ArrayList()` | 裸类型，绕过泛型检查 |
+
+> [!warning] 边界只写 extends
+> Java 没有 `<T implements X>` 写法：上界无论写类还是接口都用 `extends`，多个上界用 `&` 连接——`<T extends Comparable<T> & Serializable>`，且 `&` 之后只准接接口、类至多一个并必须排第一。类型参数只有上界，下界 `super` 只出现在通配符里（见下文）。
 
 ## 类型擦除
 
