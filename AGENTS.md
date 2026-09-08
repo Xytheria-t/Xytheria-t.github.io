@@ -19,6 +19,7 @@
 - `Vinea.html` 只由 `node .build/build.mjs` 生成（按 `TPL_MANIFEST` 清单拼接 `.build/tpl/` 模块），绝不手改。改内容 → `notes/*.md`；改版式/交互 → `.build/tpl/`（新模块必须登记清单；模块头注释 = 该模块铁律，动手前先读）。构建不碰 git。
 - 必保 feature（spine 迷你地图、companion 章节胶囊、双链 hover 预览、gantt 渲染、mermaid 折叠懒渲染、代码行号、鼠标侧键导航、锚点）与导航模型（单一驱动源 = 浏览器历史）已断言化进 `verify-features`；设计刻意变更时先改断言再改实现。
 - 改笔记后必重跑 build（预览面板读产物，漏跑表现「改了没生效」）；常改可挂 `node .build/watch.mjs`（自动重编 + verify）。
+- 提交硬约束：`.githooks/pre-commit`（`core.hooksPath=.githooks`）会跑 build + `verify.mjs`，任一失败即拒绝提交；绕过它就等于把构建/校验责任又交回给记忆。产物 `Vinea.html`/`vendor/` 被 `.gitignore` 排除不入库，所以钩子卡的是「源可构建 + 校验全绿」，不是产物 diff。
 - 写/改 notes 后必跑 `node .build/verify.mjs` 全绿才算完成（语法冒烟、DOM 固定件、孤儿/可达性、mastery、spans、features、groups）；内容级机械校验 `node .build/vinea_check.mjs`（死链/fence/chain 栏数/summary 重名等）。
 
 ## 部署与边界

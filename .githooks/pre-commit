@@ -1,0 +1,10 @@
+#!/bin/sh
+# Vinea 提交硬约束：产物必须能重建、全量校验必须全绿，否则拒绝提交。
+# 背景：Vinea.html / vendor/ 被 .gitignore 排除（不入库），所以这里只卡「源可构建 + verify 全绿」，
+# 同时顺带把本地产物刷新到最新，杜绝「改了没生效」。
+# 启用：git config core.hooksPath .githooks
+set -e
+cd "$(git rev-parse --show-toplevel)" || exit 1
+
+node .build/build.mjs || { echo "[pre-commit] build 失败 —— 提交中止"; exit 1; }
+node .build/verify.mjs || { echo "[pre-commit] verify 未全绿 —— 提交中止，先修到 VERIFY OK"; exit 1; }
