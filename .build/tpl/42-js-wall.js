@@ -31,6 +31,19 @@ function wallHTML(n){
         '死锁':'四条件 · 定位与破环',
       },
     },
+    '类加载': {
+      groups: [
+        { name:'委派规则', ids:['双亲委派模型'] },
+        { name:'加载器与流程', ids:['类加载器','类加载过程'] },
+        { name:'破坏场景', ids:['破坏双亲委派'] },
+      ],
+      traits: {
+        '双亲委派模型':'先问父后问己 · 沙箱安全',
+        '类加载器':'四层加载器 · 命名空间身份',
+        '类加载过程':'七阶段 · clinit 触发时机',
+        '破坏双亲委派':'TCCL · Tomcat 隔离',
+      },
+    },
   };
   const facet = MOC_FACETS[n.id] || null;
   // flatten a MOC's tree to actual notes (mtime desc, top k)
