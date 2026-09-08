@@ -75,18 +75,27 @@ function wallHTML(n){
     const subs = t.type==='moc' ? flatten(t) : [];
     const fallow = t.type==='moc' && subs.length===0;
     const count = t.type==='moc' ? subs.length : 1;
-    let lastM = new Date(t.mtime||0).getTime();
-    subs.forEach(function(x){ const mt = new Date(x.mtime||0).getTime(); if(mt>lastM) lastM = mt; });
-    const rel = lastM ? relTime(lastM) : '';
     const c = typeof color === 'string' ? color : t.accent;
     const chip = opts && opts.chip ? opts.chip : ''; // 语义 chip：注册了 MOC_FACETS 的卡走 chip 路线，不再叠「1 篇/更新于」噪音
     const mast = (t.type!=='moc') ? mastHTML(t.id) : ''; // 熟悉程度徽标：仅原子笔记且评级过才渲染，顶替无信息量的「1 篇」
+    let dataHtml = '';
+    if(chip){
+      dataHtml = '<div class="v-chip">'+esc(chip)+'</div>';
+    } else if(t.type!=='moc'){
+      const fr = freshLabel(t.id);
+      dataHtml = '<div class="v-data'+(fr.due?' due':'')+'">'+esc(fr.text)+'</div>';
+    } else {
+      let lastM = new Date(t.mtime||0).getTime();
+      subs.forEach(function(x){ const mt = new Date(x.mtime||0).getTime(); if(mt>lastM) lastM = mt; });
+      const rel = lastM ? relTime(lastM) : '';
+      dataHtml = rel ? '<div class="v-data">更新于 '+esc(rel)+'</div>' : '';
+    }
     return '<article class="ventry'+(fallow?' fallow':'')+'" data-target="'+t.id+'" style="--c:'+c+'">'
       + '<div class="v-top"><span class="v-tag">'+esc(t.catLabel)+'</span>'
       + (mast ? mast : (fallow ? '<span class="stamp">待垦</span>' : (chip ? '' : (count>1 ? '<span class="v-count"><b>'+count+'</b> 篇</span>' : '')))) // count>1：原子笔记自身就是单篇，「1 篇」无信息量，直接省掉
       + '</div>'
       + '<h3 class="v-name">'+esc(t.title)+'</h3>'
-      + (chip ? '<div class="v-chip">'+esc(chip)+'</div>' : (rel ? '<div class="v-data">更新于 '+esc(rel)+'</div>' : ''))
+      + dataHtml
       + '</article>';
   }
   if(bandOn){

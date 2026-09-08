@@ -22,11 +22,11 @@ aliases: [泛型, 泛型擦除, generics]
 
 泛型 = 类型参数化：把「容器/方法操作什么类型」写成参数 `<T>` 交给编译器，编译期完成检查，使用处免去强制转换。
 
-| 无泛型写法 | 泛型写法 |
-|---|---|
-| `List list = new ArrayList();` `list.add("hi"); list.add(42);` | `List<String> list = new ArrayList<>();` `list.add(42);` → 编译报错 |
-| 取值必须手动强转：`(String) list.get(0)` | 取出来直接就是 `String` |
-| 装错类型运行时才炸 `ClassCastException` | 错误拦在编译期 |
+| 对比维度 | 无泛型 | 泛型 |
+|---|---|---|
+| **类型检查** | 运行时抛 `ClassCastException` | 编译期报错 |
+| **取值方式** | `(String) list.get(0)` | 直接使用 |
+| **安全性** | 装错类型运行时才炸 | 错误拦在编译期 |
 
 > [!note] 类型参数只能是引用类型
 > `List<int>` 编译不过——擦除后类型参数要替换成 Object，而 int 不是 Object 的子类。基本类型一律走包装类，装箱时机见 [[基本数据类型]]。
@@ -40,10 +40,13 @@ aliases: [泛型, 泛型擦除, generics]
 |---|---|---|
 | 泛型类 | `class Box<T> { T value; }` | T 随对象确定 |
 | 泛型接口 | `interface Comparable<T>` | 实现类指定 T |
-| 泛型方法 | `<T> T first(List<T> list)` | `<T>` 写在返回类型前，T 由实参推断 |
-| 多类型参数 | `class Pair<K, V>` | 逗号分隔，各自独立 |
-| 类型边界 | `<T extends Comparable<T>> T max(List<T> list)` | T 限定为 Comparable 的子类 |
-| 原始类型 | `List list = new ArrayList()` | 裸类型：绕过全部泛型检查的旧写法，编译器发 unchecked（未检查）警告 |
+| 泛型方法 | `<T> T first(List<T> list)` | T 由实参推断 |
+| 多类型参数 | `class Pair<K, V>` | 逗号分隔 |
+| 类型边界 | `<T extends Comparable<T>>` | T 限定为 Comparable 子类 |
+| 原始类型 | `List list = new ArrayList()` | 裸类型，绕过泛型检查 |
+
+> [!warning] 边界只写 extends
+> Java 没有 `<T implements X>` 写法；上界是类还是接口都写 `extends`，多个上界用 `&` 连接：`<T extends Comparable<T> & Serializable>`。
 
 | 字母 | 含义 | 典型位置 |
 |---|---|---|
@@ -52,9 +55,6 @@ aliases: [泛型, 泛型擦除, generics]
 | K / V | Key / Value | Map |
 | R | Return，返回值 | 方法返回类型 |
 | ? | 未知类型 | 通配符，见下文 |
-
-> [!warning] 边界只写 extends
-> Java 没有 `<T implements X>` 写法；上界是类还是接口都写 `extends`，多个上界用 `&` 连接：`<T extends Comparable<T> & Serializable>`。
 
 ## 类型擦除
 
@@ -74,17 +74,18 @@ String s = (String) list.get(0);    // 编译器自动插入的强转
 
 擦除的推论（全部编译期拦截）：
 
-| 写法 | 原因 |
+| 限制写法 | 原因 |
 |---|---|
-| `new T()` 不行 | 运行时不知道 T 具体是谁 |
-| `new T[10]`、`new List<String>[10]` 不行 | 数组靠运行时类型检查兜底，擦除后无类型可查 |
-| `x instanceof List<String>` 不行 | 运行时只有 List |
-| `T.class` 不行 | 类型参数不是运行时实体 |
-| `class Box<T> { static T x; }` 编译错 | 擦除后 Box 只有一份字节码，静态字段却要随 T 各存一份 |
-| `class MyEx<T> extends Exception` 编译错 | 擦除后 catch 泛型异常无法区分 |
+| `new T()` ❌ | 运行时不知道 T 是谁 |
+| `new T[10]` ❌ | 擦除后无类型可查 |
+| `x instanceof List<String>` ❌ | 运行时只有 List |
+| `T.class` ❌ | 类型参数不是运行时实体 |
+| `static T x` ❌ | 静态字段需随 T 各存一份 |
 
-> [!tip] 擦除是「半擦」：声明侧留了底
-> 类、方法、字段**声明处**的泛型会写进字节码的 Signature 属性，反射 `getGenericSuperclass()` / `getGenericType()` 能读到；但运行中对象**实际装的是什么**拿不到。JSON 库的 `new TypeReference<List<User>>() {}` 正是钻这个空子——匿名子类把泛型写在了声明侧。
+> [!note] 擦除是「半擦」：擦的是「用」，留的是「声明」
+> - **擦掉的**：对象身上的类型参数。`new ArrayList<String>()` 运行时就是裸 ArrayList，`getClass()` 只能问出 `ArrayList`，这个对象当初按 `List<String>` 创建无人知晓——上一张表的禁写全由此而来。
+> - **留底的**：声明处的泛型原样存进 class 文件的 Signature 属性（JVM 专门记录泛型签名的元数据）——类头（`extends Box<String>`）、字段声明、方法签名（参数/返回值）都算；反射 `getGenericSuperclass()` / `getGenericType()` 读的就是这份底。
+> - **分界线**：底存在字节码的声明元数据里，不存在对象上。JSON 库 `new TypeReference<List<User>>() {}` 能拿到 `List<User>`，靠的是匿名子类自己是一个新类，类头的 Signature 记死了父类类型参数——读的是它的声明，不是某个运行中对象。
 
 ## 通配符与 PECS
 
@@ -94,16 +95,16 @@ PECS（Producer Extends, Consumer Super：生产者用 extends、消费者用 su
 List<Object> objs = new ArrayList<String>();   // 编译错
 ```
 
-| | 数组 | 泛型 |
+| 对比维度 | 数组 | 泛型 |
 |---|---|---|
-| 子类型关系 | 协变：`String[]` 可赋给 `Object[]` | 不变：`List<String>` 与 `List<Object>` 无关 |
-| 代价 | 错误推迟到运行时 `ArrayStoreException` | 想通用必须写通配符 |
+| **子类型** | 协变：`String[]` → `Object[]` | 不变：`List<String>` ≠ `List<Object>` |
+| **类型检查** | 运行时 | 编译期 |
 
-| 写法 | 含义 | 写入 | 读取 |
+| 通配符 | 含义 | 可写 | 可读 |
 |---|---|---|---|
-| `? extends Number` | Number 或其某个子类（具体未知） | 禁止（null 除外） | 读出按 Number 用 |
-| `? super Integer` | Integer 或其某个父类（具体未知） | 能放 Integer 及其子类 | 读出只能当 Object |
-| `?` | 某个未知类型 | 禁止 | 读出只能当 Object |
+| `? extends T` | T 或其子类 | ❌ | ✅ 按 T |
+| `? super T` | T 或其父类 | ✅ T 及其子类 | ❌ 仅 Object |
+| `?` | 未知类型 | ❌ | ❌ 仅 Object |
 
 ```java
 // extends：能读不能写
@@ -187,6 +188,15 @@ Q：桥方法是什么？
 
 A：擦除导致实现与接口的签名不一致：实现 `Comparable<String>` 写的是 `compareTo(String)`，接口擦除后要求 `compareTo(Object)`。编译器自动生成一个 `compareTo(Object)` 桥方法转发到具体实现，多态才不中断。
 
+Q：泛型在实际项目中有哪些应用？
+
+A：常见应用：
+1. 集合类型安全：`List<User>`、`Map<String, Object>` 等
+2. 泛型工具类：`Optional<T>`、`Result<T>`、`Page<T>` 等封装通用逻辑
+3. 框架设计：Spring 的 `@Autowired`、MyBatis 的 `Mapper<T>` 等
+4. 类型安全的 Builder 模式：链式调用时保持类型信息
+5. 序列化/反序列化：Jackson 的 `TypeReference`、Gson 的 `TypeToken`
+
 </details>
 
 <details>
@@ -197,5 +207,7 @@ A：擦除导致实现与接口的签名不一致：实现 `Comparable<String>` 
 - 误区：`? extends` 既能读也能写。extends 禁写（null 除外）；super 读出来只能是 Object。
 - 误区：`List`（原始类型）等价于 `List<Object>`。原始类型绕过全部泛型检查，只是兼容旧代码的裸写法，unchecked 警告就是在提醒这件事。
 - 误区：泛型数组 `new List<String>[10]` 只是运行时危险。直接编译报错——数组的运行时类型检查与擦除后的伪类型冲突，放行会造成堆污染。
+- 误区：泛型类的子类自动继承泛型参数。子类必须显式声明泛型参数，或指定具体类型，否则会丢失类型信息。
+- 误区：`List<String>` 和 `List<Integer>` 可以相互赋值。泛型是不变的，即使 String 和 Integer 都是 Object 的子类，它们的 List 也不能互赋。
 
 </details>

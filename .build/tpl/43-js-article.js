@@ -31,8 +31,8 @@ function articleHTML(n){
       + '<span class="sp-label">'+esc(it.text)+'<span class="rt-cap" title="结构密度 '+(it.d*100|0)+'%">'+(it.d*100|0)+'%</span></span>'
       + '</button>';
   }).join('');
-  markRead(n.id);
   const fr = freshLabel(n.id);
+  markRead(n.id);
   const pad = n => String(n).padStart(2,'0');
   const mt = n.mtime ? new Date(n.mtime) : null;
   const etStr = mt && !isNaN(mt) ? mt.getFullYear()+'-'+pad(mt.getMonth()+1)+'-'+pad(mt.getDate())+' · '+pad(mt.getHours())+':'+pad(mt.getMinutes()) : '';

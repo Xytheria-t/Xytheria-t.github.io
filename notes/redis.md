@@ -9,4 +9,4 @@ category: redis
 
 - [[Redis持久化机制]]
 - [[Redis高可用]]
-- [[Lua 类型与语法]]
+- [[lua]]

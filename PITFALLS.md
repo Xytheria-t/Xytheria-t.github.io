@@ -27,7 +27,9 @@
 - `wallHTML` 改完只跑 `check.mjs` → 它不调 `wallHTML`，布局错也 RAN OK。验渲染须 vm 跑 `wallHTML(NOTES[...])` 取串做断言。
 - `_harness` 的 `script` 只切 script 段 → 验 CSS 规则假 FAIL。验样式 re.search 整个 html（见通则）。
 - 给 `MOC_FACETS` 子 MOC（`java-锁`）加子卡片只改 MOC 正文 `[[双链]]` 不够 → facet 墙按白名单静默丢未登记 id。三处同步：正文双链 + `ids` + `traits`。
+- 加新 category/领域忘改 `build.mjs` 的 `GROUP` → 落到末尾「其他」卷且 `verify-groups` FAIL。`GROUP` 是根墙卷序/卷内序唯一来源（`MOC.md` links 序对根墙无效），加卷先改它。
 - `verify-mastery` 写死笔记 id → 结构一变假 FAIL。现动态推导路径，找不到记 `skip` 不 FAIL。
+- `41-js-mastery.js` MOC 卡熟练度聚合整棵子树，flatten 穿透多层 MOC 是有意的 → 别当 bug「优化」掉；子卡染色走 `--mc` 覆盖 `--c`。
 - verify 用全局选择器计数 → 同组件多区域翻倍假 FAIL。断言限定到具体容器。
 - verify 断言「已被刻意移除」的 UI → 与实现冲突。先分清「实现漏了」还是「设计改了」，属后者改断言。
 

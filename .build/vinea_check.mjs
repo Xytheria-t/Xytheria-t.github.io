@@ -3,6 +3,8 @@ import fs from 'fs'; import path from 'path';
 const dir = 'notes';
 const files = fs.readdirSync(dir).filter(f => f.endsWith('.md'));
 const slugify = s => s.trim().toLowerCase().replace(/\s+/g, '-');
+// 双链扫描只看可见正文：围栏代码块与行内代码渲染时不是链接（与 article 渲染同口径），剥掉再扫
+const visibleText = s => s.split('```').filter((_, i) => i % 2 === 0).join('\n').replace(/`[^`\n]*`/g, '');
 const CALLOUTS = ['note', 'info', 'warning', 'tip', 'danger', 'caution', 'important', 'question'];
 const MERMAID_TYPES = /^(flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|mindmap|quadrantChart|timeline|graph)/;
 
@@ -31,7 +33,7 @@ const knownSlugs = new Set();
 meta.forEach(v => { knownSlugs.add(slugify(v.title)); v.aliases.forEach(a => knownSlugs.add(slugify(a))); });
 
 for (const [f, v] of meta) {
-  for (const lm of v.raw.matchAll(/\[\[([^\]]+)\]\]/g)) {
+  for (const lm of visibleText(v.raw).matchAll(/\[\[([^\]]+)\]\]/g)) {
     const t = lm[1].split('|')[0].split('#')[0].trim();
     if (!notes[t] && !knownSlugs.has(slugify(t))) problems.push(`[P1] ${f}: 死链 [[${t}]]`);
   }
@@ -102,7 +104,7 @@ for (const [f, v] of meta) {
 
   if (iss.length) problems.push(`[P1] ${f}: ${iss.join(' | ')}`);
 
-  const outLinks = new Set([...body.matchAll(/\[\[([^\]]+)\]\]/g)].map(m => slugify(m[1].split('|')[0].split('#')[0])));
+  const outLinks = new Set([...visibleText(body).matchAll(/\[\[([^\]]+)\]\]/g)].map(m => slugify(m[1].split('|')[0].split('#')[0])));
   if (outLinks.size <= 1) sparse.push(f);
 }
 

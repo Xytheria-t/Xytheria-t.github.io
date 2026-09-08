@@ -41,6 +41,7 @@
 .v-data{font-family:var(--sans);font-size:10.5px;letter-spacing:.08em;
   color:color-mix(in srgb,var(--c) 48%,var(--muted));
   font-variant-numeric:tabular-nums;position:relative;z-index:2}
+.v-data.due{color:#C0563B;font-weight:600}
 /* 语义 chip — 替代无信息量的「1 篇/更新于」角标；MOC_FACETS 注册的卡才显示 */
 .v-chip{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;max-width:fit-content;
   font-family:var(--sans);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:500;
