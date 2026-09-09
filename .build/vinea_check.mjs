@@ -93,6 +93,12 @@ for (const [f, v] of meta) {
     if (m[1] !== 'mermaid' && MERMAID_TYPES.test(m[2].trim()))
       iss.push('mermaid误标为' + m[1]);
 
+  // details 只收纳复盘文本与图；代码块（java/bash/…）一律放正文，别折进 <details>
+  for (const m of body.matchAll(/<details>[\s\S]*?<\/details>/g))
+    for (const c of m[0].matchAll(/```(\w+)/g))
+      if (c[1] !== 'mermaid' && c[1] !== 'gantt')
+        iss.push('details内含代码块(```' + c[1] + ')');
+
   const sums = [...body.matchAll(/<summary>(.*?)<\/summary>/g)].map(m => m[1].trim());
   const ph = sums.filter(s => !s || s === '图' || s === '图示');
   if (ph.length) iss.push('summary占位 x' + ph.length);

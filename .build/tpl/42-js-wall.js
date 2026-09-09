@@ -31,10 +31,23 @@ function wallHTML(n){
         '死锁':'四条件 · 定位与破环',
       },
     },
+    '线程池': {
+      groups: [
+        { name:'执行主线', ids:['threadpoolexecutor'] },
+        { name:'创建选型', ids:['线程池创建'] },
+        { name:'缓冲与兜底', ids:['阻塞队列','拒绝策略'] },
+      ],
+      traits: {
+        'threadpoolexecutor':'七大参数 · 执行路径',
+        '线程池创建':'工厂 vs 手动 · execute/submit',
+        '阻塞队列':'有界 / 无界 · 空满阻塞',
+        '拒绝策略':'四策略 · Abort 默认',
+      },
+    },
     '类加载': {
       groups: [
-        { name:'委派规则', ids:['双亲委派模型'] },
         { name:'加载器与流程', ids:['类加载器','类加载过程'] },
+        { name:'委派规则', ids:['双亲委派模型'] },
         { name:'破坏场景', ids:['破坏双亲委派'] },
       ],
       traits: {
@@ -78,7 +91,8 @@ function wallHTML(n){
     });
   }
   // order 决定墙上阅读位次（罗马数字），未声明的退到 1e9；布局排序时 pinned(featured) 永远最前
-  function orderOf(t){ return t.order > 0 ? t.order : 1e9; }
+  // 题卡（有 diff）：难度档优先（简单→中等→困难），同档内按 order(=题号)；非题卡仍只认 order
+  function orderOf(t){ return t.diff ? t.diff * 1e6 + (t.order > 0 ? t.order : 0) : (t.order > 0 ? t.order : 1e9); }
   function layoutRank(t){ return t.pinned ? -1e12 : orderOf(t); }
   const plain = list.slice().sort(function(a,b){return layoutRank(a)-layoutRank(b);});
   const bandOn = isRoot && plain.some(function(t){return t.group >= 0;});

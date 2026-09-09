@@ -88,6 +88,8 @@ const GROUP = [
   { num:'Ⅳ', name:'算法',         cats:['leetcode'],                        layout:'index' },
   { num:'Ⅴ', name:'简历项目',     cats:['projects'],                        layout:'feature' },
 ];
+// 题卡难度档 → 排序权重（子 MOC 墙按难度从易到难排，同档内退回 order=题号）
+const DIFF_RANK = { '简单':1, '中等':2, '困难':3 };
 const GROUP_OF = {};
 GROUP.forEach(function(g, gi){
   g.cats.forEach(function(c, ci){
@@ -571,6 +573,7 @@ for (const [base, r] of Object.entries(raw)) {
     excerpt: r.meta.excerpt || extractExcerpt(r.body) || text.slice(0, 90),
     featured: r.meta.featured || '',
     order: Number(r.meta.order) || 0, // 墙上显式位次，1..n；0 = 未声明，退回权重排序
+    diff: DIFF_RANK[r.meta.difficulty] || 0, // 题卡难度档（leetcode）：1 简单 / 2 中等 / 3 困难；0 = 非题卡→只用 order
     group: grp ? grp.index : -1,        // 卷序号；-1 = 未归入任何卷（渲染时落到末尾「其他」）
     groupNum: grp ? grp.num : '',
     groupName: grp ? grp.name : '',

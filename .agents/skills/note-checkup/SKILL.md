@@ -106,7 +106,7 @@ A：...
     ````
 - **gantt**：自定义 `` ```gantt `` 块（非 mermaid），由 build.mjs 渲染。
 - **callout**：`> [!type] 标题` 后接正文/列表；`type` ∈ note/info/warning/tip/danger/caution/important/question，只承载单一提醒。
-- **details（复盘块）**：`<details><summary>...</summary>` 包面试问答、常见误区、选型决策、速记、对比等；标签不限固定名，数量 0~N 自定。
+- **details（复盘块）**：`<details><summary>...</summary>` 包面试问答、常见误区、选型决策、速记、对比等；标签不限固定名，数量 0~N 自定。**只装文本与图（```mermaid``` / ```gantt```）——代码块一律放正文**，折进折叠块既压掉代码的存在感、又与 details 卡片撞成双层边框；`vinea_check.mjs` 已把「details 内含非图代码块」断言为 P1。
 - **双链**：`[[笔记标题]]` 行内穿插，散布全篇，不单独成节；链接指向 `notes/` 下对应 md 的 slug。
 
 ## featured（MOC 专属）
@@ -133,6 +133,7 @@ featured: ThreadPoolExecutor   # 核心子笔记的 title 或别名，build 自�
 7. **MOC 默认走 wall 渲染**；可按需加 chain / branch / 深入节（描述性 H2），不禁止。
 8. **结构化优先、少散文**：能用表格、callout、mermaid 说清的不写段落；链表/树/哈希表这类结构优先画出来，而非文字描述。
 9. **H2 描述性具体术语**，禁编号（`## 1. xxx`）与泛化占位（详节/总结/详解）；深入/落地节按内容落点命名。
+10. **`<details>` 内不放代码块**（` ```mermaid ` / ` ```gantt ` 除外）：要展示代码就开正文节（如 `## 落地：Spring 写法`），别塞进折叠块。机械断言在 `vinea_check.mjs`（P1）。
 
 **子类主题色**（与 `build.mjs` 的 `ACCENT` 对应，改色去那改，这里只读）：java-collection 青绿 / javase 翠绿 / jvm 珊瑚红 / juc 亮紫 / spring 亮青 / architecture·system-design 亮橙 / network 天蓝 / mysql 亮蓝 / redis 鲜红 / mq 品红 / leetcode 金黄 / projects 玫红
 
