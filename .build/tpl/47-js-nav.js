@@ -15,6 +15,9 @@ function updateAccent(n){
   if(n.id===ROOT_ID){ progress.style.opacity='0'; spine.classList.remove('show'); companion.classList.remove('show'); }
   else if(n.type==='moc'){ progress.style.opacity='0'; spine.classList.remove('show'); companion.classList.remove('show'); }
   else { progress.style.opacity='1'; spine.classList.add('show'); companion.classList.add('show'); }
+  // 随问随记胶囊：仅在根墙 / MOC 墙显示，进原子笔记正文时隐藏
+  const dock = document.getElementById('clipDock');
+  if(dock) dock.style.display = (n.type === 'moc' || n.id === ROOT_ID) ? '' : 'none';
 }
 
 let _transTimer = 0;

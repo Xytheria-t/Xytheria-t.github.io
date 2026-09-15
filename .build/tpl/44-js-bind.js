@@ -3,6 +3,9 @@ function bind(){
   // stopPropagation：防 data-target 嵌套时外层卡再触发一次 go()
   stage.querySelectorAll('[data-target]').forEach(function(el){ el.onclick=function(e){ e.stopPropagation(); go(el.getAttribute('data-target')); }; });
   stage.querySelectorAll('a.wikilink:not(.broken)').forEach(function(el){ el.onclick=function(){go(el.getAttribute('data-target'));}; });
+  // 常驻右上角：随问随记速记收件箱一键直达
+  const dock = document.getElementById('clipDock');
+  if(dock) dock.onclick = function(e){ e.preventDefault(); go(dock.getAttribute('data-target')); };
   // 封面卷色带 — 点击滚到对应卷带；hover/focus 暂停轮播并切到该段；离开后立即跳到下一段继续；静止 2.2s 自动轮播
   const cmCap = stage.querySelector('#cm-caption');
   const cmRail = stage.querySelector('.cover-mosaic .cm-rail');

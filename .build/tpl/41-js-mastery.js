@@ -32,11 +32,13 @@ function charCount(html){
   return txt.length;
 }
 
-/* ---- 结构密度（替代旧「阅读分钟」）：节内结构化字符 / 该节总字符，保底 0.08 ---- */
+/* ---- 结构密度（替代旧「阅读分钟」）：节内结构化字符 / 该节总字符，保底 0.08。
+   重型结构（表格/代码/chain/问答/mermaid）+ 列表 + callout 都算「可扫读结构」，
+   否则纯散文+要点列表的节密度会被压到地板，区分度差。 ---- */
 function structCharsOf(html){
   const box = document.createElement('div'); box.innerHTML = html;
   let n = 0;
-  box.querySelectorAll('table, figure.code, .chain, .qa-q, .qa-a, .mermaid')
+  box.querySelectorAll('table, figure.code, .chain, .qa-q, .qa-a, .mermaid, ul, ol, blockquote')
     .forEach(function(el){ n += (el.textContent || '').replace(/\s+/g, '').length; });
   return n;
 }

@@ -87,6 +87,7 @@ const GROUP = [
   { num:'Ⅲ', name:'中间件',        cats:['mysql','redis','mq'],              layout:'feature' },
   { num:'Ⅳ', name:'算法',         cats:['leetcode'],                        layout:'index' },
   { num:'Ⅴ', name:'简历项目',     cats:['projects'],                        layout:'feature' },
+  { num:'Ⅵ', name:'随问随记',     cats:['clip'],                           layout:'tiles' },
 ];
 // 题卡难度档 → 排序权重（子 MOC 墙按难度从易到难排，同档内退回 order=题号）
 const DIFF_RANK = { '简单':1, '中等':2, '困难':3 };
@@ -572,6 +573,7 @@ for (const [base, r] of Object.entries(raw)) {
     links,
     excerpt: r.meta.excerpt || extractExcerpt(r.body) || text.slice(0, 90),
     featured: r.meta.featured || '',
+    clip: !!r.meta.clip,                 // 速记笔记标记：渲染时隐藏密度徽标（轻型捕获，密度无意义）
     order: Number(r.meta.order) || 0, // 墙上显式位次，1..n；0 = 未声明，退回权重排序
     diff: DIFF_RANK[r.meta.difficulty] || 0, // 题卡难度档（leetcode）：1 简单 / 2 中等 / 3 困难；0 = 非题卡→只用 order
     group: grp ? grp.index : -1,        // 卷序号；-1 = 未归入任何卷（渲染时落到末尾「其他」）

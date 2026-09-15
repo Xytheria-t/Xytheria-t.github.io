@@ -33,6 +33,17 @@ body::after{content:"";position:fixed;inset:0;z-index:1;pointer-events:none;opac
 #progress{position:fixed;top:0;left:0;height:2px;width:100%;transform:scaleX(0);transform-origin:left;z-index:50;opacity:0;
   background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 35%,#fff));
   transition:transform .12s linear,opacity .2s}
+/* 随问随记速记收件箱 — 常驻右上角一键直达 */
+.clip-dock{position:fixed;top:11px;right:14px;z-index:48;
+  font-family:var(--serif);font-weight:600;font-size:13px;letter-spacing:.05em;line-height:1;
+  color:var(--accent-ink);text-decoration:none;cursor:pointer;
+  padding:7px 13px;border:1px solid var(--line);border-radius:999px;
+  background:color-mix(in srgb,var(--bg) 80%,transparent);
+  backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);
+  transition:border-color .2s var(--ease),background .2s var(--ease)}
+.clip-dock:hover{border-color:var(--accent-ink);background:color-mix(in srgb,var(--bg) 64%,transparent)}
+@media (prefers-reduced-motion:reduce){ .clip-dock{transition:none} }
+@media (max-width:640px){ .clip-dock{top:8px;right:9px;font-size:12px;padding:6px 10px} }
 /* stage */
 #stage{position:relative;z-index:2;min-height:100vh;min-height:100svh;padding:8vh 6vw 14vh;
   transition:opacity .42s var(--ease),transform .42s var(--ease),filter .42s var(--ease)}

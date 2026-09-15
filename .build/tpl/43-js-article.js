@@ -12,6 +12,7 @@ function articleHTML(n){
     h.text = h.inner.replace(/<[^>]+>/g,'').trim();
     h.id = 'h-'+i;
   });
+  if(n.clip) heads.forEach(function(h){ h.d = 0.5; }); // 速记无重型结构，密度无意义，置中性
   const tocItems = heads.filter(function(h){return h.text;}).map(function(h){
     return {tag:h.tag, id:h.id, text:h.text, chars:h.chars, d:h.d};
   });
@@ -19,7 +20,7 @@ function articleHTML(n){
   heads.forEach(function(h){
     body += n.html.slice(_cur, h.start);
     body += '<'+h.tag+' id="'+h.id+'"'+h.attrs+' data-d="'+h.d.toFixed(2)+'">'+h.inner
-          + '<span class="rt-cap" title="本节约 '+h.chars+' 字 · 结构密度 '+(h.d*100|0)+'%">密度 '+(h.d*100|0)+'%</span>'
+          + (n.clip ? '' : '<span class="rt-cap" title="本节约 '+h.chars+' 字 · 结构密度 '+(h.d*100|0)+'%">密度 '+(h.d*100|0)+'%</span>')
           + '</'+h.tag+'>';
     _cur = h.end;
   });

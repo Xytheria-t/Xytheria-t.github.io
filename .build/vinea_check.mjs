@@ -18,7 +18,7 @@ for (const f of files) {
     const i = line.indexOf(':');
     if (i > -1) kv[line.slice(0, i).trim()] = line.slice(i + 1).trim();
   }
-  const title = (kv.title || '').trim();
+  const title = (kv.title || '').trim().replace(/^["']|["']$/g, '');
   if (!title) { problems.push(`[P0] ${f}: 无 title`); continue; }
   const h1 = (raw.match(/^# (.+)$/m) || [])[1];
   if (h1 && h1.trim() !== title) problems.push(`[P1] ${f}: H1「${h1}」≠ title「${title}」`);
