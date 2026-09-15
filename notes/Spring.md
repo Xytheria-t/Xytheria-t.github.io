@@ -11,3 +11,4 @@ Spring 框架族总览：以 IoC(控制反转，对象交由容器统一创建�
 - [[Spring AOP]]
 - [[MyBatis]]
 - [[Transactional 速记]]
+- [[Spring AOP 速记]]
