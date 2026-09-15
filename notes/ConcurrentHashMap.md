@@ -1,6 +1,6 @@
 ---
 title: ConcurrentHashMap
-category: juc
+category: java-collection
 ---
 
 # ConcurrentHashMap
@@ -26,7 +26,7 @@ category: juc
 | 外层结构 | Segment 数组，每段一张小表 | Node 数组一张大表 + 链表/红黑树 |
 | 锁实现 | Segment 继承 ReentrantLock（state 靠 CAS，见 [[AQS]]） | CAS 写空桶 + synchronized 锁桶头 |
 | 锁粒度 | 一段（并发度 = 段数，默认 16） | 一个桶（并发度 ≈ 桶数） |
-| 哈希定位 | 先定位段、再定位桶，两次哈希 | spread(h) 一次定位桶 |
+| 哈希定位 | 先定位段、再定位桶，两次哈希 | spread(h) 一次定位桶（结构同 [[HashMap]]） |
 
 > [!tip] 为什么 1.8 弃用分段锁
 > 锁已细到桶级，单桶冲突少、持锁极短，synchronized 经锁升级优化后的低竞争路径足够轻（见 [[synchronized]]）；而每段一把 ReentrantLock 要多养一份 AQS 队列对象，表越大这笔内存越不划算。
@@ -69,7 +69,7 @@ flowchart TD
 
 - **spread(h)**：扰动函数，`(h ^ (h >>> 16)) & 0x7fffffff`——高低 16 位异或让高位参与寻址（与 HashMap 同思路），再抹掉符号位保证 hash 非负，因为负数被挪作特殊标记。
 - **ForwardingNode**：hash = MOVED(-1) 的占位节点，插在「已迁走」的桶头上，读它转发去新表、写它先帮忙迁移。
-- **树化**：链表长度 ≥ 8 且表长 ≥ 64 才转红黑树，否则优先扩容稀释冲突——阈值依据与 HashMap 相同（链表长度服从泊松分布，到 8 的概率极低）。
+- **树化**：插入后链上已有 8 个节点（源码 `binCount >= TREEIFY_THRESHOLD - 1`，`binCount` 从头节点按 0 计，即正在插入第 9 个）才调 `treeifyBin`，且还要表长 ≥ 64，否则优先扩容稀释冲突——阈值依据与 [[HashMap]] 相同（链表长度服从泊松分布，到 8 的概率约千万分之六）。
 - **扩容并发**：transfer 按步长（stride，最小 16 个桶）把桶分段「承包」给线程，各迁各的；sizeCtl 负值编码参与线程数。
 
 | sizeCtl 取值 | 含义 |
@@ -93,6 +93,9 @@ flowchart TD
 | 节点的后继 Node.next | volatile 写（链表追加/树化改链不丢节点） |
 
 volatile 写 happens-before 后续的 volatile 读（语义见 [[volatile]] 与 [[JMM]]），所以写线程落盘的值读线程立刻可见；扩容期间读到 ForwardingNode 就顺着它去新表找——迁移中的桶读不丢、写不挡。
+
+> [!note] 碰到树桶读的是 TreeBin
+> 树化后的桶头是 `TreeBin`（hash = TREEBIN(-2)），它不存值，只持有树的根并维护一条链表供遍历；读顺着树/链查，写用内部 `lockState` 做读写协调，读者因此**不必阻塞**。
 
 > [!warning] 无锁读 = 弱一致读
 > get 保证「写完成后一定能读到」，但不保证「遍历瞬间看到全局精确快照」——这是设计语义，不是 bug。
@@ -138,6 +141,12 @@ map.computeIfAbsent(k, key -> expensiveLoad(key));
 map.merge(k, 1, Integer::sum);          // 并发计数
 ```
 
+> [!danger] computeIfAbsent 里禁止递归更新同一张表
+> 计算函数内部再改同一张表就是递归更新：JDK 8 **不做检测**，两个 key 落在同一桶时可能把桶结构改坏甚至死循环、跨桶循环依赖则可能死锁；JDK 9+ 会检测并直接抛 `IllegalStateException: Recursive update`。映射函数只做「算出值」这一件事，别在里面写回本表。
+
+> [!warning] 写操作并非永不等待
+> 撞上扩容时写线程会先 `helpTransfer` 协助搬桶再重试，这段时间是确实的等待；此外同一桶上的写仍互斥。所谓「读无锁」指的是 `get`，不是写。
+
 <details>
 <summary>面试问答 (4题)</summary>
 
@@ -153,6 +162,14 @@ Q：size() 准确吗？
 
 A：不保证。它是 baseCount 加各 CounterCell 的瞬时求和（LongAdder 思路），并发写时是近似值；要精确需外部同步。
 
+Q：computeIfAbsent 里再 put 同一个 key 会怎样？
+
+A：这是递归更新。JDK 8 不检测，同桶可能结构损坏/死循环，跨桶循环依赖可能死锁；JDK 9+ 检测到就抛 `IllegalStateException: Recursive update`。映射函数里只做纯计算。
+
+Q：get 完全不阻塞吗？
+
+A：`get` 全程无锁不阻塞（遇 ForwardingNode 转发去新表、遇 TreeBin 走树/链查）。但写不一样：扩容中的写要先协助迁移，同桶写还互斥。
+
 Q：ConcurrentHashMap 能替代 Hashtable 吗？
 
 A：能。Hashtable 只为兼容旧 API 保留；Collections.synchronizedMap 也是全对象锁，性能远不如桶级锁。
@@ -160,11 +177,13 @@ A：能。Hashtable 只为兼容旧 API 保留；Collections.synchronizedMap 也
 </details>
 
 <details>
-<summary>常见误区 (4条)</summary>
+<summary>常见误区 (6条)</summary>
 
 - 误区：方法线程安全，组合起来也安全。check-then-act 复合操作不原子，要用 putIfAbsent / compute / merge。
 - 误区：默认并发度 16 是 1.8 的概念。16 是 1.7 的段数；1.8 并发度取决于桶数，构造参数只当初始容量提示。
 - 误区：无并发也该用 ConcurrentHashMap。单线程下 volatile 读和 CAS 有额外成本，HashMap 更快，按并发需求选。
 - 误区：get 读到「旧一拍」的值是实现缺陷。弱一致是设计语义，可见性由 volatile 保证，写完成必可见。
+- 误区：读写都永不阻塞。写遇扩容要协助迁移、同桶写互斥；只有 `get` 是无锁的。
+- 误区：把 CHM 当缓存就能在 computeIfAbsent 里回源并回写。映射函数内递归更新本表，JDK 8 可能死循环、JDK 9+ 直接抛异常；需要回源就先算好值再 `put`。
 
 </details>

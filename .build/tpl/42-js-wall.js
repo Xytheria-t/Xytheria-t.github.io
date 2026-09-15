@@ -9,25 +9,21 @@ function wallHTML(n){
     'java-锁': {
       groups: [
         { name:'入门', ids:['java-锁对比'] },
-        { name:'内置同步', ids:['synchronized','jmm','volatile'] },
+        { name:'内置同步', ids:['synchronized','volatile','dcl'] },
         { name:'显式锁', ids:['reentrantlock','reentrantreadwritelock','stampedlock'] },
-        { name:'底层与原子', ids:['cas-与原子类','aqs','locksupport'] },
-        { name:'同步工具', ids:['semaphore','countdownlatch'] },
+        { name:'底层与原子', ids:['cas-与原子类','aqs'] },
         { name:'故障排查', ids:['死锁'] },
       ],
       traits: {
         'java-锁对比':'总览·横评',
         'synchronized':'JVM 关键字 · 隐式重入',
-        'jmm':'内存模型 · 可见性判据',
         'volatile':'内存可见性 · 无锁',
+        'dcl':'双重检查 · volatile 护体',
         'reentrantlock':'可重入 · 公平可选',
         'reentrantreadwritelock':'读写分离 · 可降级',
         'stampedlock':'乐观返回 · JDK 8+',
         'cas-与原子类':'无锁 · 原子操作',
         'aqs':'框架 · 同步器底座',
-        'locksupport':'阻塞原语 · 许可机制',
-        'semaphore':'共享模式 · 许可计数',
-        'countdownlatch':'共享模式 · 一次性',
         '死锁':'四条件 · 定位与破环',
       },
     },
@@ -44,6 +40,18 @@ function wallHTML(n){
         '拒绝策略':'四策略 · Abort 默认',
       },
     },
+    'java-collection': {
+      groups: [
+        { name:'线性结构', ids:['arraylist-与-linkedlist'] },
+        { name:'哈希结构', ids:['hashmap'] },
+        { name:'并发容器', ids:['concurrenthashmap'] },
+      ],
+      traits: {
+        'arraylist-与-linkedlist':'连续数组 · 双向节点',
+        'hashmap':'数组+链+树 · 高位拆分',
+        'concurrenthashmap':'桶级锁 · 无锁读',
+      },
+    },
     '类加载': {
       groups: [
         { name:'加载器与流程', ids:['类加载器','类加载过程'] },
@@ -55,6 +63,36 @@ function wallHTML(n){
         '类加载器':'四层加载器 · 命名空间身份',
         '类加载过程':'七阶段 · clinit 触发时机',
         '破坏双亲委派':'TCCL · Tomcat 隔离',
+      },
+    },
+    'juc': {
+      groups: [
+        { name:'概念基础', ids:['进程与线程','jmm','虚拟线程'] },
+        { name:'线程管理', ids:['线程池'] },
+        { name:'同步原语', ids:['java-锁'] },
+        { name:'并发容器', ids:['concurrenthashmap'] },
+      ],
+      traits: {
+        '进程与线程':'进程 vs 线程 · 调度单位',
+        'jmm':'内存模型 · 可见性判据',
+        '虚拟线程':'轻量协程 · JDK 21',
+        '线程池':'池化复用 · 七大参数',
+        'java-锁':'锁体系 · 横评总览',
+        'concurrenthashmap':'桶级锁 · 高并发 Map',
+      },
+    },
+    '计算机网络': {
+      groups: [
+        { name:'传输层', ids:['tcp','udp'] },
+        { name:'应用层', ids:['http','https'] },
+        { name:'会话与认证', ids:['cookie、session与token'] },
+      ],
+      traits: {
+        'tcp':'三次握手 · 可靠传输',
+        'udp':'无连接 · 尽力交付',
+        'http':'请求-响应 · 无状态',
+        'https':'TLS 加密 · 身份认证',
+        'cookie、session与token':'会话管理 · 三种凭证',
       },
     },
   };

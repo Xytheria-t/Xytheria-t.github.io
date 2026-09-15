@@ -24,6 +24,7 @@ Java 并发同步原语总览:语义由 JMM(Java 内存模型)打底,内置锁�
 - [[Java 锁对比]]
 - [[synchronized]]
 - [[volatile]]
+- [[DCL]]
 - [[ReentrantLock]]
 - [[ReentrantReadWriteLock]]
 - [[StampedLock]]
