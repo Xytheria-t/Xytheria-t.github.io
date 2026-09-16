@@ -10,3 +10,4 @@ category: redis
 - [[Redis持久化机制]]
 - [[Redis高可用]]
 - [[lua]]
+- [[Redisson 速记]]

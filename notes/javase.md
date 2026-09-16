@@ -8,6 +8,7 @@ category: javase
 Java 语言基础总览：语法、面向对象、常用类库等。Java 集合为其子分类。
 
 - [[基本数据类型]]
+- [[static 关键字]]
 - [[Java 泛型]]
 - [[Java Collection]]
 - [[线程创建]]
