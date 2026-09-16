@@ -57,7 +57,8 @@ const ACCENT = {
   redis: '#FF1744',                 // 鲜红 · Redis
   mq: '#D500F9',                    // 品红 · MQ
   leetcode: '#FFD600',              // 金黄 · LeetCode
-  projects: '#FF4081',              // 玫红 · Projects
+  projects: '#FF4081',
+  'ai-tools': '#AEEA00',              // 青柠 · AI Tools              // 玫红 · Projects
 };
 const ACCENT_INK = {
   root: '#C67100',
@@ -74,10 +75,11 @@ const ACCENT_INK = {
   mq: '#AA00AA',
   leetcode: '#F5A600',
   projects: '#C60055',
+  'ai-tools': '#827717',
 };
 const accentOf = (cat) => ACCENT[cat] || '#C9B08A';
 const accentInkOf = (cat) => ACCENT_INK[cat] || '#8A6D3B';
-const CAT_LABEL = { root:'Overview', 'java-collection':'Collections', 'javase':'JavaSE', jvm:'JVM', juc:'Concurrency', spring:'Spring', architecture:'Architecture', mysql:'MySQL', redis:'Redis', mq:'MQ', leetcode:'LeetCode', 'system-design':'System Design', projects:'Projects', network:'Network' };
+const CAT_LABEL = { root:'Overview', 'java-collection':'Collections', 'javase':'JavaSE', jvm:'JVM', juc:'Concurrency', spring:'Spring', architecture:'Architecture', mysql:'MySQL', redis:'Redis', mq:'MQ', leetcode:'LeetCode', 'system-design':'System Design', projects:'Projects', network:'Network', 'ai-tools':'AI Tools' };
 
 // 卷（首页根墙分区）—— 数组顺序 = 卷序；cats 顺序 = 卷内位次
 // layout = 卷目录带版式（4 种词汇表）：tiles 磁贴墙 / spread 对开页 / feature 大标页 / index 索引列表；缺省 tiles
@@ -88,6 +90,7 @@ const GROUP = [
   { num:'Ⅳ', name:'算法',         cats:['leetcode'],                        layout:'index' },
   { num:'Ⅴ', name:'简历项目',     cats:['projects'],                        layout:'feature' },
   { num:'Ⅵ', name:'随问随记',     cats:['clip'],                           layout:'tiles' },
+  { num:'Ⅶ', name:'AI 工具',      cats:['ai-tools'],                       layout:'tiles' },
 ];
 // 题卡难度档 → 排序权重（子 MOC 墙按难度从易到难排，同档内退回 order=题号）
 const DIFF_RANK = { '简单':1, '中等':2, '困难':3 };
