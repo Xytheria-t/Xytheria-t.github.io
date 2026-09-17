@@ -28,8 +28,8 @@
 - 加新 category/领域忘改 `build.mjs` 的 `GROUP` → 落到末尾「其他」卷且 `verify-groups` FAIL。`GROUP` 是根墙卷序/卷内序唯一来源（`MOC.md` links 序对根墙无效）。
 - 卷外常驻的域（`clip` / 随问随记）别登记 `GROUP`、别写进 `MOC.md` 双链：只走壳层右上角 `#clipDock`。`build.mjs` 从 `30-tail.html` 现读按钮目标标 `dock`，`verify-groups` 反查它不落任何卷，`verify-health` 据此豁免孤儿/可达（按钮没了或指向改了 → 这两条断言直接红）。
 - 速记（`clip: true`）回挂学科 MOC → 八股墙被速记卡片污染（用户已明确否掉）。速记只挂收件箱 `随问随记`；撤卡片要三处同步（正文双链 + `groups[].ids` + `traits`），只删正文会留死配置。
-- `verify-mastery` 写死笔记 id → 结构一变假 FAIL。现动态推导路径，找不到记 `skip` 不 FAIL。
-- `41-js-mastery.js` MOC 卡熟练度聚合整棵子树、flatten 穿透多层 MOC 是有意的 → 别当 bug「优化」掉；子卡染色走 `--mc` 覆盖 `--c`。
+- verify 里写死笔记 id → 笔记结构一变就假 FAIL。路径一律从 `NOTES` 动态推导，找不到记 `skip` 不 FAIL。
+- `42-js-wall.js` 的 flatten 穿透多层 MOC、把整棵子树的笔记摊平成一张墙是有意的 → 别当 bug「优化」掉。
 - verify 用全局选择器计数 → 同组件多区域翻倍假 FAIL。断言限定到具体容器。
 - verify 断言「已被刻意移除」的 UI → 与实现冲突。先分清「实现漏了」还是「设计改了」，属后者改断言。
 

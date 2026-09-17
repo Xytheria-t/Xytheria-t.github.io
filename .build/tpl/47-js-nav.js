@@ -23,7 +23,6 @@ function updateAccent(n){
 let _transTimer = 0;
 function transitionTo(slug){
   const n=NOTES[slug]; if(!n) return;
-  recentPush(slug); // ponytail: localStorage['vinea.recent'] feeds the wall .recent dot
   // vi = 当前 Vinea 栈下标，随 state 一起入历史 —— popstate 靠它精确定位，不用 indexOf 猜
   // （同一篇可能被重复访问，indexOf 只会命中第一次出现的位置 → 后退会跳过中间直接回到很早的页）
   try{ window.history.replaceState({slug:slug, vi:idx},'', '#'+slug); }

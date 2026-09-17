@@ -40,7 +40,7 @@
       if(Math.abs(lx - hitX) < 8 && Math.abs(ly - hitY) < 8) return; // 没挪动够，沿用上次结果
       hitX = lx; hitY = ly;
       const f = document.elementFromPoint(lx, ly);
-      const hot = f && f.closest ? f.closest('a,button,.ms-b,.copy-btn,.branch-card,.callout,[data-target]') : null;
+      const hot = f && f.closest ? f.closest('a,button,.copy-btn,.branch-card,.callout,[data-target]') : null;
       if(hot !== lastHot){
         lastHot = hot;
         if(halo) halo.classList.toggle('big', !!hot); // 只在「命中结果变了」才碰 DOM

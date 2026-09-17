@@ -23,7 +23,7 @@ const run = () => {
   })
 }
 
-// 重编后自动跑统一 verify（check + 分组/掌握度/跨度/内容健康）；不通过仅告警，不阻断 watch。
+// 重编后自动跑统一 verify（check + features/代码/分组/跨度/内容健康）；不通过仅告警，不阻断 watch。
 const verify = () => {
   console.log('→ 跑 verify ...')
   const r = spawnSync(process.execPath, [resolve(root, '.build', 'verify.mjs')], { cwd: root, stdio: 'inherit' })

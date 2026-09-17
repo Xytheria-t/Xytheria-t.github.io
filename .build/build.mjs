@@ -691,10 +691,10 @@ const TPL_MANIFEST = [
   '26-css-mobile.css',   // 手机端适配（≤540px）
   '30-tail.html',        // </style> + <body> 壳 + <script> 开标签
   '40-js-core.js',       // NOTES/ROOT_ID 注入点 + DOM refs + esc/attr
-  '41-js-mastery.js',    // 熟练度 / 翻阅时间戳 / recently-read / relTime
+  '41-js-metrics.js',    // 内容度量：字数 / 结构密度 / relTime
   '42-js-wall.js',       // wallHTML（根墙杂志版式 + 子墙）与 entryHTML/flatten
   '43-js-article.js',    // articleHTML 正文渲染
-  '44-js-bind.js',       // bind / bindMastery / bindPop（双链 hover 预览）/ bindCopy
+  '44-js-bind.js',       // bind / bindPop（双链 hover 预览）/ bindCopy
   '45-js-mermaid.js',    // mermaid 懒加载 + enrich（graph/sequence 高亮）
   '46-js-setup.js',      // 正文 setup：chain 滚动 / 锚点 / 表格排序 / setupWall
   '47-js-nav.js',        // 导航模型：go/popstate/transitionTo/spine/companion

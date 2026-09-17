@@ -29,19 +29,11 @@
 .v-count{margin-left:auto;font-family:var(--sans);font-size:10px;letter-spacing:.1em;
   text-transform:uppercase;color:color-mix(in srgb,var(--c) 55%,var(--muted));font-variant-numeric:tabular-nums}
 .v-count b{color:color-mix(in srgb,var(--c) 70%,var(--ink));font-size:13px;margin-right:2px}
-/* 熟悉程度徽标（仅原子笔记、评级过才渲染）：颜色/档位与正文 Mastery 控件同源，见 JS mastHTML */
-.vm{margin-left:auto;display:inline-flex;align-items:center;gap:5px;position:relative;z-index:2;
-  font-family:var(--sans);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-  line-height:1;color:color-mix(in srgb,var(--mc) 80%,var(--ink));
-  border:1px solid color-mix(in srgb,var(--mc) 48%,var(--line));
-  background:color-mix(in srgb,var(--mc) 9%,transparent);padding:3px 8px 3px 6px}
-.vm::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--mc);flex:none}
 .v-name{font-family:var(--serif);font-size:clamp(17px,1.5vw,21px);font-weight:600;
   line-height:1.3;margin:0;color:color-mix(in srgb,var(--c) 55%,var(--ink));position:relative;z-index:2}
 .v-data{font-family:var(--sans);font-size:10.5px;letter-spacing:.08em;
   color:color-mix(in srgb,var(--c) 48%,var(--muted));
   font-variant-numeric:tabular-nums;position:relative;z-index:2}
-.v-data.due{color:#C0563B;font-weight:600}
 /* 语义 chip — 替代无信息量的「1 篇/更新于」角标；MOC_FACETS 注册的卡才显示 */
 .v-chip{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;max-width:fit-content;
   font-family:var(--sans);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:500;

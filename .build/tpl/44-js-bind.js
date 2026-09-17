@@ -61,34 +61,8 @@ function bind(){
     if(!stage.__cmTimer && !RM) stage.__cmTimer = setInterval(cmTick, 2200);
     showCap(cmTiles[0]);   // 初始：第一段即激活态（文字已相同，只落激活样式）
   }
-  bindMastery();
   bindPop();
   bindCopy();
-}
-
-/* mastery buttons on an article: click to set, click 清除 to clear */
-function bindMastery(){
-  stage.querySelectorAll('.ms').forEach(function(box){
-    const id = box.getAttribute('data-ms');
-    function clear(){
-      masterySet(id, null);
-      box.querySelectorAll('.ms-b').forEach(function(o){ o.classList.remove('on'); });
-      box.classList.add('unrated');
-    }
-    box.querySelectorAll('button.ms-b').forEach(function(b){
-      b.addEventListener('click', function(e){
-        e.stopPropagation();
-        const k = b.getAttribute('data-k');
-        if(b.classList.contains('on')){
-          clear();
-        } else {
-          masterySet(id, k);
-          box.querySelectorAll('.ms-b').forEach(function(o){ o.classList.toggle('on', o===b); });
-          box.classList.remove('unrated');
-        }
-      });
-    });
-  });
 }
 
 function bindPop(){
