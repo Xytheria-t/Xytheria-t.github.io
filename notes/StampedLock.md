@@ -23,7 +23,7 @@ StampedLock(JDK8)用戳记(stamp)管理三种模式 → 乐观读无锁读后校
 | 方式 | 方法 | 并发 | 说明 |
 |---|---|---|---|
 | 写锁 | `writeLock()` / `writeLockInterruptibly()` | 独占 | 返回 stamp,用 `unlockWrite(stamp)` 释放 |
-| 读锁 | `readLock()` / `readLockInterruptibly()` | 共享 | 阻塞直到无写,用 `unlockRead(stamp)` 释放 |
+| 读锁 | `readLock()` / `readLockInterruptibly()` | 共享 | 阻塞到无写,用 `unlockRead(stamp)` 释放 |
 | 乐观读 | `tryOptimisticRead()` | 无锁 | 返回 stamp,不阻塞;**返回 0 表示正被写锁持有** |
 | 超时尝试 | `tryReadLock(t)` / `tryWriteLock(t)` | — | 拿不到就超时返回 0 |
 
@@ -39,19 +39,16 @@ if (!sl.validate(stamp)) {            // 戳变了说明有写
 }
 ```
 
-> [!danger] 乐观读的两个陷阱
-> 1. **先把值读进局部变量再 `validate`**：边校验边读共享字段,校验通过也可能读到被写线程改过的新值,前后不一致。
-> 2. **`tryOptimisticRead()` 返回 0 = 已有写锁持有**,直接走 `readLock()` 悲观读,别拿 0 继续乐观读。
+读进来的必须是**局部变量快照**:边校验边读共享字段,校验通过也可能读到被写线程改过的新值,前后不一致。
 
 ## 模式转换
 
-> [!tip] 持锁状态下也能升降级
-> `tryConvertToWriteLock(stamp)` / `tryConvertToReadLock(stamp)` / `tryConvertToOptimisticRead(stamp)`：在已持锁时尝试换模式,成功返回新 stamp(**不释放锁**),失败返回 0 再走常规获取。这是 [[ReentrantReadWriteLock]] 没有的能力。
+`tryConvertToWriteLock(stamp)` / `tryConvertToReadLock(stamp)` / `tryConvertToOptimisticRead(stamp)`:持锁时换模式,成功返回新 stamp(**不释放锁**),失败返回 0 走常规获取——[[ReentrantReadWriteLock]] 没有的能力。
 
 ## 不可重入与接口适配
 
 > [!warning] 不可重入 & 无 Condition
-> StampedLock **不可重入**,同一线程重入会死锁;也没有 Condition 原生支持。需要可重入/多条件时退回 [[ReentrantReadWriteLock]]。补偿手段：`asReadLock()` / `asWriteLock()` 把戳记包装成 `Lock` 视图,给只认 `Lock` 接口的 API 用。
+> StampedLock **不可重入**,同一线程重入会死锁;也没有 Condition。需要可重入/多条件时退回 [[ReentrantReadWriteLock]];只认 `Lock` 接口的 API 用 `asReadLock()` / `asWriteLock()` 包装。
 
 ## 与读写锁对比
 
@@ -64,31 +61,22 @@ if (!sl.validate(stamp)) {            // 戳变了说明有写
 | 锁降级 | ✅ 写→读 | ✅ tryConvertToReadLock |
 | 极读多性能 | 中 | 优 |
 
-> [!note] 选型
-> 极端读多写少、读操作短 → StampedLock 乐观读；否则读写锁更稳。完整对比见 [[Java 锁对比]]。
+完整对比见 [[Java 锁对比]]。
 
 <details>
-<summary>面试问答 (3题)</summary>
+<summary>面试问答 (2题)</summary>
 
 Q：乐观读为什么快？
-
-A：tryOptimisticRead 不加锁,只是读戳,无阻塞、无 CAS 争用；只有戳被写变更才升级为读锁重读,读多写少时几乎零竞争开销。
+A：不加锁、无 CAS 争用,只是读戳;戳被写变更才升级为读锁重读,读多写少时几乎零竞争。
 
 Q：StampedLock 能替代读写锁吗？
-
-A：不能完全替代：不可重入、无 Condition,且在写稍多时乐观读频繁升级反而更慢；按读写比选型。
-
-Q：乐观读期间要注意什么？
-
-A：先把所有需要的字段读进局部变量,再 validate(stamp);读过程不能有副作用,否则校验失败重读时会重复执行。
+A：不能完全替代:不可重入、无 Condition,写稍多时频繁升级反而更慢,改造老代码风险高。
 
 </details>
 
 <details>
-<summary>常见误区 (3条)</summary>
+<summary>常见误区 (1条)</summary>
 
-- 误区：乐观读随便用。读期间不要调有副作用的方法,读多个字段必须先进局部变量,否则读到的是不一致快照。
 - 误区：StampedLock 完全不可中断。`readLockInterruptibly()` / `writeLockInterruptibly()` 就是中断版,只是普通 `readLock()` 不响应中断。
-- 误区：StampedLock 全面优于读写锁。写稍多时乐观读频繁校验失败 + 重读,开销反超读写锁;且不可重入,改造老代码风险高。
 
 </details>

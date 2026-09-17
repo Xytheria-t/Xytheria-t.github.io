@@ -44,14 +44,10 @@ AtomicInteger c = new AtomicInteger(0);
 c.incrementAndGet(); // i++ 的线程安全版
 ```
 
-> [!note] 实现方式随 JDK 变化
-> JDK 8 原子类基于 `Unsafe.compareAndSwapXxx`;JDK 9+ 改为 `VarHandle`(JEP 193 之后 `Unsafe` 逐步收敛)。语义不变,读源码时注意版本差异。
+JDK 8 原子类基于 `Unsafe.compareAndSwapXxx`,JDK 9+ 改为 `VarHandle`(JEP 193)。语义不变,读源码时注意版本差异。
 
 > [!warning] ABA 问题
-> 值 A→B→A,CAS 校验「还是 A」便认为没变,但中间已被改过。解决：AtomicStampedReference 用版本戳,每次改戳+1,校验值+戳。
-
-> [!note] ABA 实战场景
-> 无锁栈：`top` 弹出 A → 压入 B → 又把 A 压回来,CAS 判定「top 仍是 A」通过,但 A 的 next 已指向被弹出的节点,结构被破坏。用 `AtomicStampedReference`(值 + 版本戳)或 `AtomicMarkableReference`(值 + 标记位)。
+> 值 A→B→A,CAS 校验「还是 A」便认为没变,中间其实已被改过。典型现场是无锁栈:`top` 弹出 A → 压入 B → 又把 A 压回来,CAS 判定「top 仍是 A」通过,但 A 的 next 已指向被弹出的节点,结构被破坏。解决:`AtomicStampedReference`(值 + 版本戳,每次改戳 +1)或 `AtomicMarkableReference`(值 + 标记位)。
 
 ## 代价与优化
 
@@ -65,8 +61,7 @@ c.incrementAndGet(); // i++ 的线程安全版
 > [!warning] LongAdder 不是 AtomicLong 的平替
 > `sum()` 只是各 cell 的**瞬时求和**,并发更新下不是原子快照;也不支持 `compareAndSet`、不支持「读到值再 CAS」这类依赖当前值的逻辑。适合监控计数这类高频自增统计,不适合精确读-改-写。
 
-> [!note] 与锁的关系
-> CAS 是无锁基石,[[AQS]] 与 [[ReentrantLock]] 的 state 修改也靠 CAS；原子类适合单变量原子更新,复杂临界区仍需锁。对比见 [[Java 锁对比]]。
+CAS 是无锁基石:[[AQS]] 与 [[ReentrantLock]] 的 state 修改也靠 CAS;原子类适合单变量原子更新,复杂临界区仍需锁,对比见 [[Java 锁对比]]。
 
 <details>
 <summary>面试问答 (2题)</summary>
@@ -77,15 +72,15 @@ A：ABA 问题(用版本戳解决)、高竞争自旋耗 CPU、只能保证一个
 
 Q：LongAdder 为什么比 AtomicLong 快？
 
-A：LongAdder 把计数分散到多个 cell,写时各加各的,读时汇总,降低 CAS 争用,高并发计数更优;代价是 sum() 非原子快照。
+A：它把计数分散到多个 cell,写时各加各的、读时汇总,降低 CAS 争用;代价是 `sum()` 非原子快照。
 
 </details>
 
 <details>
 <summary>常见误区 (3条)</summary>
 
-- 误区：CAS 无锁就无开销。高竞争下自旋空转,CPU 打满且延迟可能比阻塞锁更高,竞争大时该用锁。
-- 误区：原子类能保证多个变量一起原子。只能保单个变量;多变量要包成不可变对象用 `AtomicReference`,或直接用锁。
-- 误区：LongAdder 的 sum() 是精确值。并发更新时是瞬时近似值,做余额、限额这类强一致判断会出错。
+- 误区：CAS 无锁就无开销。高竞争下自旋空转,延迟可能比阻塞锁更高,竞争大时该用锁。
+- 误区：原子类能保证多个变量一起原子。只能保单个变量,多变量要包成不可变对象用 `AtomicReference` 或直接用锁。
+- 误区：LongAdder 的 `sum()` 是精确值。并发下只是瞬时近似值,做余额、限额这类强一致判断会出错。
 
 </details>

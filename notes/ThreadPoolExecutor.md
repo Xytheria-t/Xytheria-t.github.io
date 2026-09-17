@@ -31,18 +31,10 @@ aliases: [线程池 ThreadPoolExecutor]
 | handler | 拒绝策略 | 默认 AbortPolicy 抛异常，详见 [[拒绝策略]] |
 | allowCoreThreadTimeOut | 核心线程是否超时回收 | 默认 false |
 
-> [!warning] 关键提醒
-> 默认 AbortPolicy 直接抛异常；高吞吐场景用 CallerRunsPolicy 让调用方自己跑，避免雪崩。行为差异见 [[拒绝策略]]。
-
-> [!note] 容量公式
-> 合理容量 ≈ 峰值 QPS × 平均耗时。队列过短易触发拒绝，过长易 OOM；队列选型见 [[阻塞队列]]。
-
 > [!tip] 调参顺序
-> 先压测得峰值 QPS 与平均耗时 → 估算队列容量 → corePoolSize 按任务类型估算（CPU 密集 ≈ N_cpu+1，IO 密集 ≈ N_cpu×U×(1+W/C)，粗略 2N）→ 压测验证。公式详见 [[阻塞队列]]。
+> 先压测得峰值 QPS 与平均耗时 → 估算队列容量（公式见 [[阻塞队列]]）→ corePoolSize 按任务类型估算：CPU 密集 ≈ N_cpu+1，IO 密集 ≈ N_cpu×U×(1+W/C)，粗略 2N → 压测验证。队列过短易触发拒绝，过长易 OOM。
 
 ## 执行路径决策
-
-任务提交后的路由顺序：
 
 ```chain
 提交任务 | execute / submit | 入口
@@ -68,19 +60,16 @@ flowchart TD
 
 </details>
 
-> [!note] 与流程图的差异
-> 上面的流程图回答「走哪条路」，调用方关心的是「谁来跑」：直接执行与扩容执行都落到工作线程，入队与拒绝则根本没出线程池边界。
-
 ## 落地：构造示例
-
-> [!note] 关键前提
-> 合理设置队列容量与拒绝策略，防止资源耗尽。属于 [[JUC]] 并发工具包的核心能力。
 
 ```java
 ThreadPoolExecutor ex = new ThreadPoolExecutor(
     4, 8, 60, TimeUnit.SECONDS,
     new LinkedBlockingQueue<>(100));
 ```
+
+- 队列容量与拒绝策略必须显式给，防止资源耗尽；本类属 [[JUC]] 并发工具包，队列与拒绝细节见 [[阻塞队列]]、[[拒绝策略]]。
+- 别用 `Executors.newFixedThreadPool` / `newSingleThreadExecutor`：底层是无界 [[阻塞队列]]，任务持续堆积可能撑爆内存（风险清单见 [[线程池创建]]）。
 
 <details>
 <summary>展开核心类图</summary>
@@ -103,9 +92,6 @@ classDiagram
 ```
 
 </details>
-
-> [!danger] 工厂方法陷阱
-> 避免使用 Executors.newFixedThreadPool / newSingleThreadExecutor 等工厂方法创建的线程池，底层使用无界 [[阻塞队列]]，任务持续堆积可能撑爆内存。
 
 <details>
 <summary>面试问答 (2题)</summary>

@@ -33,8 +33,8 @@ aliases: [Java 锁比较, Java 同步原语对比]
 | 性能特点 | 升级后阻塞,低开销起步 | 极轻量 | 灵活,略重 | 读多写少优 | 极读多写少最优 | 高并发读优,竞争自旋耗 CPU |
 | 典型场景 | 简单互斥,临界区小 | 状态标志,双重检查 | 需中断/超时/公平 | 缓存,读多写少 | 极读多写少,读短 | 计数器,原子更新 |
 
-> [!tip] 一句话选型
-> 简单互斥用 `synchronized`；要中断/超时/公平/多条件用 `ReentrantLock`；读多写少用 `ReentrantReadWriteLock`,极端读多用 `StampedLock`；只更新单个变量用 CAS 原子类；`volatile` 只解决可见性不解决原子性。
+> [!warning] 常见误用
+> `volatile` 不保证复合操作原子性(`i++` 仍会丢更新);`StampedLock` 不可重入,重入会死锁;`ReentrantLock` 必须 `finally{ unlock() }`,否则持有线程异常会永久卡死。
 
 ## 选型决策
 
@@ -49,10 +49,7 @@ aliases: [Java 锁比较, Java 同步原语对比]
 - 单变量原子 | 计数器/标志位自增 | CAS 原子类
 ```
 
-> [!warning] 常见误用
-> `volatile` 不保证复合操作原子性(`i++` 仍会丢更新)；`StampedLock` 不可重入,重入会死锁；`ReentrantLock` 必须 `finally{ unlock() }`,否则持有线程异常会永久卡死。
-
-## 锁升级与底层
+## 锁升级状态
 
 <details>
 <summary>展开锁升级状态图</summary>
@@ -69,35 +66,17 @@ stateDiagram-v2
 </details>
 
 > [!note] 锁升级仅适用于 synchronized
-> 偏向锁(省 CAS)→轻量级锁(自旋 CAS)→重量级锁(OS 互斥,线程 park)。`ReentrantLock` 等基于 [[AQS]],无此升级路径,直接竞争入 CLH 队列 park。
-> 注：偏向锁在 JDK 15 起默认禁用、JDK 18 起实质移除,新版本 `synchronized` 直接进入轻量级→重量级路径。
+> 偏向锁(省 CAS)→轻量级锁(自旋 CAS)→重量级锁(OS 互斥,线程 park);`ReentrantLock` 等基于 [[AQS]],无此升级路径,直接竞争入 CLH 队列 park。
+> 注:偏向锁在 JDK 15 起默认禁用、JDK 18 起实质移除,新版本 `synchronized` 直接进入轻量级→重量级路径。
 
 ## 类族结构
 
-<details>
-<summary>展开锁类族类图</summary>
-
-```mermaid
-classDiagram
-    class Lock {<<interface>>}
-    class ReadWriteLock {<<interface>>}
-    class ReentrantLock
-    class ReentrantReadWriteLock
-    class StampedLock
-    Lock <|.. ReentrantLock
-    ReadWriteLock <|.. ReentrantReadWriteLock
-```
-
-</details>
-
 > [!note] 类族关系
-> `ReentrantLock` 与 `ReentrantReadWriteLock` 均实现 `Lock`/`ReadWriteLock` 并基于 [[AQS]]；`StampedLock` **不实现 `Lock` 接口**,走独立的戳记(stamp)API,因此无 `Condition`、不可重入(需要 `Lock` 视图时用 `asReadLock()` / `asWriteLock()`)。
+> `ReentrantLock` 与 `ReentrantReadWriteLock` 均实现 `Lock`/`ReadWriteLock` 并基于 [[AQS]];`StampedLock` **不实现 `Lock` 接口**,走独立的戳记(stamp)API,因此无 `Condition`、不可重入(需要 `Lock` 视图时用 `asReadLock()` / `asWriteLock()`)。
 
 ## 共享同步器：Semaphore vs CountDownLatch vs CyclicBarrier
 
-> 三个共享模式工具都基于 [[AQS]] 共享同步,共用 `state` 计数 + CLH 队列 park;差别只在于 **state 怎么解释、何时放行、能否重置**。
-
-### 一图横评
+> 三者都基于 [[AQS]] 共享同步,共用 `state` 计数 + CLH 队列 park;差别只在 **state 怎么解释、何时放行、能否重置**。
 
 | 维度 | Semaphore | CountDownLatch | CyclicBarrier |
 |---|---|---|---|
@@ -108,10 +87,7 @@ classDiagram
 | 能否重置 | 许可可加可减,事实可"重置" | ❌ 一次性,归零即失效 | ✅ 一代用完自动重置,可循环 |
 | 复用 | 长期持有 | 单次编排 | 重复同步(如多轮迭代) |
 | 线程数关系 | 准入 ≤ 许可数 | 等待方 ≥ 计数方 | 参与方彼此数量已知 |
-| 模式 | AQS 共享 | AQS 共享 | AQS 共享 + Condition |
 | 典型场景 | 限流、资源池准入 | 等 N 个任务完成、起跑线 | 多线程分阶段汇合、迭代计算 |
-
-### 选型分流
 
 ```branch
 限流 / 资源池准入 | 同时最多 N 个进 | Semaphore
@@ -119,43 +95,28 @@ classDiagram
 线程分阶段汇合 | 多轮迭代,每轮所有线程到位才进入下一阶段 | CyclicBarrier
 ```
 
-> [!tip] 怎么选
-> **准入计数** → Semaphore；**一次性等完成** → CountDownLatch；**可循环的多点汇合** → CyclicBarrier。三者都基于 [[AQS]] 共享模式,搞不清时回到 AQS 看 state 怎么解释。
-
 ### 常见误区
 
-- 误区：Semaphore 是轻量锁。许可数设 1 时行为类似互斥量,但**无所有权、不可重入、任意线程能 release 凭空加许可**——要互斥用 [[ReentrantLock]]。
-- 误区：`countDown` 漏写会永久挂起等待方。任务抛异常而 `countDown` 没执行 → 计数永远归不了零；用 `await(timeout, unit)` 兜底。
-- 误区：CyclicBarrier 只能等 N 个线程。是的,参与方数量必须**事先固定**(构造时定)；动态参与方用 `Phaser`。
-- 误区：CountDownLatch 用 `join()` 也能替代。`join()` 只能等线程结束,CountDownLatch 等的是「事件」——可以是任务、可以是多源事件,更灵活。
+- 误区：Semaphore 是轻量锁。许可数 1 时像互斥量,但**无所有权、不可重入、任意线程可 release 凭空加许可**;要互斥用 [[ReentrantLock]]。
+- 误区：`countDown` 漏写会永久挂起等待方。任务异常没 countDown → 计数归不了零;用 `await(timeout, unit)` 兜底。
+- 误区：CyclicBarrier 只能等固定 N 个线程,CountDownLatch 可用 `join()` 替代。动态参与方用 `Phaser`;`join()` 只等线程结束,门闩等的是「事件」。
 
 <details>
-<summary>面试问答 (4题)</summary>
+<summary>面试问答 (2题)</summary>
 
-Q：synchronized 和 ReentrantLock 区别？
+Q：synchronized 和 ReentrantLock 怎么选？
+A：简单互斥用 synchronized;要中断/超时/公平/多 Condition 才上 ReentrantLock,代价是手动 unlock。
 
-A：synchronized 是 JVM 内置锁,自动释放、不可中断/超时、非公平、单等待集；ReentrantLock 是 API 显式锁,需手动 unlock,支持中断/超时/公平/多 Condition,底层 AQS。
-
-Q：volatile 为什么不能保证 i++ 原子？
-
-A：i++ 是读-改-写三步,volatile 只保证可见性与禁止重排,不保证三步之间不被其他线程插入,需用 AtomicInteger 或锁。
-
-Q：StampedLock 的乐观读怎么用？
-
-A：tryOptimisticRead() 拿戳→把值读进局部变量→validate(stamp) 校验戳是否变化,变了则升级 readLock() 重读,最后 unlockRead。适合读极多写极少;戳为 0 表示已有写锁持有,直接走悲观读。
-
-Q：AQS 是什么？
-
-A：AbstractQueuedSynchronizer,JUC 同步器基石；用 volatile int state + CLH 队列变体,模板方法 tryAcquire/tryRelease 由子类实现,ReentrantLock/Semaphore 等皆基于它。
+Q：volatile 为什么不能保证 `i++` 原子？
+A：`i++` 是读-改-写三步,volatile 只保可见性与单次读写原子,三步之间仍可被插空,要用 [[CAS 与原子类]]。
 
 </details>
 
 <details>
-<summary>常见误区 (4条)</summary>
+<summary>常见误区 (3条)</summary>
 
-- 误区：volatile 是轻量锁。实际它不是锁,只保可见性/有序性,不保复合操作原子性。
-- 误区：读写锁读多写少一定快。读锁写锁仍可能饥饿,极端读多 StampedLock 更优。
-- 误区：ReentrantLock 比 synchronized 慢。JDK6 后两者差距很小,选型看功能需求而非性能。
-- 误区：CAS 绝对无锁无坑。有 ABA 问题与自旋开销,高竞争用 LongAdder/StampedLock 缓解。
+- 误区：volatile 是轻量锁。它不是锁,只保可见性/有序性,复合操作原子性不保。
+- 误区：读多写少一定快。读写锁仍可能饥饿,写稍多时不如普通互斥锁;极端读多才上 StampedLock。
+- 误区：CAS 无锁就无坑。有 ABA 问题与自旋开销,高竞争可用 LongAdder 缓解。
 
 </details>

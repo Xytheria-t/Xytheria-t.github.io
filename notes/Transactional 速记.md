@@ -8,8 +8,7 @@ clip: true
 
 ## 标注位置
 
-- 类上：该类所有 public 方法默认带事务。
-- 方法上：覆盖类级配置。
+类上：该类所有 public 方法默认带事务；方法上：覆盖类级配置。
 
 ## 工作原理
 
@@ -24,5 +23,5 @@ clip: true
 ## 最佳实践
 
 - 放 Service 层、方法 public；查询 `readOnly = true`。
-- 事务尽量小，避远程调用 / 消息 / 长 IO；避同类自调用（自调用绕开代理、增强失效，详见 [[Spring AOP]]）。
+- 事务尽量小，避远程调用 / 消息 / 长 IO；避同类自调用（绕开代理、增强失效，详见 [[Spring AOP]]）。
 - 多数据源指定 `transactionManager`；`REQUIRES_NEW` 新开事务占额外连接，留意连接池与死锁。

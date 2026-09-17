@@ -15,7 +15,7 @@ table 与循环 | 唯一容器的建与遍历 | 核心
 复盘 | 面试问答与误区 | 收尾
 ```
 
-这篇只取读写 [[Redis Lua 脚本]] 够用的语言子集，每一处都拿 Java 对照；真正反直觉、会咬人的只有两处 —— 真值规则（0 也是「真」）和下标从 1 开始。
+这篇只取读写 [[Redis Lua 脚本]] 够用的语言子集，每处都拿 Java 对照；真正反直觉、会咬人的只有两处 —— 真值规则（0 也是「真」）和下标从 1 开始。
 
 ## 类型与真值
 
@@ -86,7 +86,7 @@ local q, r = divmod(7, 2)            -- 多返回值：q=3, r=1
 
 多返回值是 Java 没有的能力：接不住的丢弃、不够的补 nil；Redis 脚本的惯例是 `return ok, err`（成功标志 + 错误信息）。
 
-常用标准库够用就行：
+常用标准库：
 
 | 函数 | 作用 | 备注 |
 |---|---|---|
@@ -95,46 +95,40 @@ local q, r = divmod(7, 2)            -- 多返回值：q=3, r=1
 | string.sub(s, i, j) | 截取 | 下标 1 起、含两端 |
 | string.format(fmt, ...) | 格式化 | 类似 String.format |
 
-> [!note] 元表（metatable）
-> Lua 的「类 / 继承 / 运算符重载」全靠 table + 元表模拟。写 Redis 脚本用不到，知道这个名字即可。
+元表（metatable）：Lua 的「类 / 继承 / 运算符重载」全靠 table + 元表模拟，写 Redis 脚本用不到，知道这个名字即可。
 
 ## 落地：逐行读第一个脚本
 
 脚本由 Redis 执行，KEYS 是它注入的键名数组（下标从 1 起，机制见 [[Redis Lua 脚本]]）。下面这段统计「传入的键里有几个真实存在」：
 
 ```lua
-local n = 0                              -- 计数器：必须 local，否则沙箱报错
-for _, k in ipairs(KEYS) do              -- _ 是惯例占位名：表示「这个下标我不用」
-    if redis.call('exists', k) == 1 then -- exists 返回 1/0；必须 == 1，0 是真值不能靠真值判断
-        n = n + 1                        -- 没有 ++，只能写全
+local n = 0
+for _, k in ipairs(KEYS) do              -- _ 是惯例占位名：这个下标不用
+    if redis.call('exists', k) == 1 then -- exists 返回 1/0；0 是真值，必须 == 1
+        n = n + 1
     end
 end
-return n                                 -- number 自动转成 Redis 整数回复
+return n
 ```
 
 <details>
-<summary>面试问答 (3题)</summary>
-
-Q：Redis 为什么选 Lua 内嵌？
-
-A：解释器小、C 实现易嵌入沙箱、解释执行无编译开销，同步语义契合 Redis 单线程原子执行的模型。官方内嵌 Lua 5.1，用 redis.call 把命令桥接进脚本。
+<summary>面试问答 (2题)</summary>
 
 Q：Lua 与 Java 类型系统最大的差异？
 
 A：动态类型（变量无类型、值有类型）；number 只有 double 一种；真值规则只有 nil 和 false 为假，0 与 "" 都真。
 
-Q：Lua 怎么实现面向对象？
+Q：Redis 为什么选 Lua 内嵌？
 
-A：table + 元表（metatable）模拟类、继承与运算符重载；写 Redis 脚本用不到，知道即可。
+A：解释器小、C 实现易嵌入沙箱、解释执行无编译开销，同步语义契合 Redis 单线程原子执行的模型；官方内嵌 Lua 5.1，用 redis.call 桥接命令。
 
 </details>
 
 <details>
-<summary>常见误区 (4条)</summary>
+<summary>常见误区 (3条)</summary>
 
-- 误区：not redis.call('exists', k) 判断「不存在」。0 是真值，not 0 恒为 false；必须写 == 0。
+- 误区：not redis.call('exists', k) 判断「不存在」。0 是真值，not 0 恒为 false，必须写 == 0。
 - 误区：数组下标从 0 开始。Lua 从 1 起，KEYS[1] 才是第一个键。
-- 误区：pairs 按插入顺序遍历。顺序无保证，要顺序用 ipairs（且遇 nil 即停）。
-- 误区：变量不写 local。Redis 沙箱禁止创建全局变量，直接报错；所有声明一律 local。
+- 误区：变量不写 local。Redis 沙箱禁止创建全局变量，直接报错，所有声明一律 local。
 
 </details>

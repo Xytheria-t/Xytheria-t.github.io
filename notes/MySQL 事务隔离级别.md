@@ -19,16 +19,15 @@ category: mysql
 
 ## 隔离级别为什么存在
 
-多个事务同时读写同一批数据时，不加约束会冒出三类现象，按严重程度从轻到重：
+多个事务同时读写同一批数据，不加约束会冒出三类现象，按严重程度从轻到重：
 
 | 现象 | 是什么 | 例 |
 |---|---|---|
-| 脏读 | 读到别的事务**未提交**的改动，人家一 rollback 你读到的是幽灵 | 事务 A 改了余额没提交，事务 B 读到了，A 随后回滚 |
+| 脏读 | 读到别的事务**未提交**的改动，人家一 rollback 你读到的是幽灵 | A 改了余额没提交，B 读到了，A 随后回滚 |
 | 不可重复读 | 同一事务内**两次读同一行**，中间被别人提交了 UPDATE/DELETE，读到的值变了 | 第一次读 balance=100，别人改完提交，再读变 200 |
 | 幻读 | 同一事务内**同一查询条件**，中间被别人 INSERT/DELETE 并提交，第二次查多出/少了行 | 查 age>20 得 5 行，别人插了 1 行提交，再查得 6 行 |
 
-> [!note] 不可重复读 vs 幻读
-> 不可重复读针对「已存在的行被改/删」（值或行没了），幻读针对「多了之前不存在的行」。标准对两者的容忍度不同：RC 挡脏读但允许不可重复读，RR 进一步挡住不可重复读，并在 InnoDB 里把快照读的幻读也挡了。
+区别只一句话：不可重复读针对「已存在的行被改/删」，幻读针对「多了之前不存在的行」。
 
 ## 四种级别与现象矩阵
 
@@ -39,10 +38,9 @@ SQL 标准四档（由松到严），对照每种现象是否被挡：
 | READ UNCOMMITTED（读未提交，RU） | ❌ 不挡 | ❌ | ❌ | 直接读最新版本，无版本链、无 S 锁 |
 | READ COMMITTED（读已提交，RC） | ✅ | ❌ | ❌ | [[MVCC]]：每次快照读新建 ReadView |
 | REPEATABLE READ（可重复读，RR） | ✅ | ✅ | ✅（快照读，见下） | [[MVCC]]：首次快照读建 ReadView 后复用 + Next-Key Lock 兜当前读 |
-| SERIALIZABLE（串行化） | ✅ | ✅ | ✅ | 普通 SELECT 也加共享锁（退化为读写互斥），或退化为纯 MVCC + 锁 |
+| SERIALIZABLE（串行化） | ✅ | ✅ | ✅ | 普通 SELECT 也加共享锁（退化为读写互斥） |
 
-> [!warning] 标准 vs InnoDB 实情
-> SQL 标准里 RR **不要求**挡幻读，但 InnoDB 在 RR 下靠「快照读复用 ReadView（挡住快照读幻读）+ 当前读用 Next-Key Lock（挡住当前读幻读）」把幻读也挡了。这是 InnoDB 相对标准的「加强」，也是它敢把 RR 当默认值的原因。
+SQL 标准里 RR **不要求**挡幻读，InnoDB 却把幻读也挡了（快照读复用 ReadView + 当前读用 Next-Key Lock），这是它敢把 RR 当默认值的原因。
 
 设置与查看：
 
@@ -60,20 +58,17 @@ SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;
 | RR | 快照读复用首次 ReadView；当前读加 Next-Key Lock 并**持有到事务结束** | 同 RC，但间隙锁贯穿事务 | 视图冻结 + 锁守区间 |
 | SERIALIZABLE | 普通 SELECT 隐式转 `LOCK IN SHARE MODE` 加 S 锁，与 X 锁互斥 | 写加 X 锁 | 读写排队，等于单线程 |
 
-> [!note] RC 与 RR 的实现差异只有两点
-> 一是 ReadView 生成时机（每次 vs 首次复用，见 [[MVCC]] 的「一行三次读取」）；二是间隙锁的持有时长——RC 当前读锁完即放，所以 RC 下仍可能因别人插入出现「幻读感」，RR 持有 Next-Key Lock 到事务末才堵住插入。MVCC 只解决「读-写」不互斥，写-写、当前读-写仍靠锁。
+RC 与 RR 的实现差异只有两点：ReadView 生成时机（每次 vs 首次复用，见 [[MVCC]]），以及间隙锁持有时长（RC 锁完即放，RR 持有到事务末堵住插入）。MVCC 只解决「读-写」不互斥，写-写、当前读-写仍靠锁。
 
 ## 落地：RR 下快照读与当前读的分叉
-
-同一事务内混用两种读法，RR 也未必「完全无幻读」：
 
 | 动作 | 读法 | 读到 |
 |---|---|---|
 | `SELECT * FROM t WHERE age>20` | 快照读 | ReadView 挑出的旧版本，新插入行不可见 |
 | 同上 `SELECT … FOR UPDATE` | 当前读 | 最新已提交版本，新插入行**看得见**（幻影） |
 
-> [!danger] 混用读法的缝
-> 先快照读（看不见新行）→ 再当前读（看见新行）→ 回头再快照读，RR 下快照读仍用旧视图不会看到幻影，但「当前读之后基于幻影行做的 UPDATE」会把那条本不想碰的行一并改掉。要彻底规避，全程用 `FOR UPDATE` 当前读让 Next-Key Lock 锁住区间。
+> [!danger] 混用读法仍有缝
+> 先快照读（看不见新行）再当前读（看见新行），基于幻影行做的 UPDATE 会改到本不想碰的行；要彻底规避，全程用 `FOR UPDATE` 让 Next-Key Lock 贯穿事务。机制见 [[MVCC]]。
 
 ## 选型与默认
 
@@ -88,11 +83,7 @@ SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;
 > 任何级别下写 `SELECT … FOR UPDATE` / `LOCK IN SHARE MODE` 都升级为当前读并加锁，相当于临时拉到 SERIALIZABLE 的「读加锁」语义。隔离级别定的是「默认栅栏」，锁能手动加高。
 
 <details>
-<summary>面试问答 (5题)</summary>
-
-Q：MySQL 四种隔离级别是什么，分别解决什么现象？
-
-A：RU（读未提交）、RC（读已提交）、RR（可重复读）、SERIALIZABLE（串行化）。RU 三种现象都不挡；RC 挡脏读；RR 在 InnoDB 里挡脏读、不可重复读、幻读；SERIALIZABLE 全挡。档位越低并发越高、一致性越弱。
+<summary>面试问答 (3题)</summary>
 
 Q：不可重复读和幻读的区别？
 
@@ -100,24 +91,19 @@ A：不可重复读是同一事务两次读同一行，值被别人的 UPDATE/DE
 
 Q：InnoDB 的 RR 为什么能挡幻读，和标准有什么不同？
 
-A：标准里 RR 不要求挡幻读。InnoDB 靠两套机制：快照读复用 ReadView，别人后插入的行 trx_id 不合法 → 不可见；当前读用 Next-Key Lock 锁住区间 → 插入被阻塞。因此 InnoDB 的 RR 实际挡住了幻读，这也是它敢做默认值的原因。
-
-Q：RC 和 RR 在实现上差在哪？
-
-A：两点。一是 ReadView 生成时机（RC 每次快照读新建，RR 首次建后复用，见 [[MVCC]]）；二是间隙锁持有时长（RC 当前读锁完即放，RR 持有到事务结束）。MVCC 只拆读-写互斥，写-写和当前读仍靠锁。
+A：标准里 RR 不要求挡幻读。InnoDB 靠两套机制：快照读复用 ReadView，别人后插入的行 trx_id 不合法 → 不可见；当前读用 Next-Key Lock 锁住区间 → 插入被阻塞。这也是它敢做默认值的原因。
 
 Q：RR 下 MVCC 能完全防住幻读吗？
 
-A：不能算彻底。快照读的幻读被复用视图挡住；但当前读读最新已提交版本，新行看得见，这部分靠 Next-Key Lock。先快照读再当前读混用时，仍可能基于幻影行做改动。要彻底规避，全程用 `FOR UPDATE` 让间隙锁贯穿事务。
+A：不算彻底。快照读的幻读被复用视图挡住；当前读读最新已提交版本，新行看得见，这部分靠 Next-Key Lock。先快照读再当前读混用时，仍可能基于幻影行做改动。
 
 </details>
 
 <details>
-<summary>常见误区 (4条)</summary>
+<summary>常见误区 (3条)</summary>
 
-- 误区：RR 是 SQL 标准的「可重复读」，必然挡不住幻读。InnoDB 实现了 Next-Key Lock + 快照读，实际把幻读也挡了，属标准的加强版。
+- 误区：RR 是 SQL 标准的「可重复读」，必然挡不住幻读。InnoDB 用 Next-Key Lock + 快照读把幻读也挡了，属标准的加强版。
 - 误区：隔离级别越高越好。SERIALIZABLE 读写互斥等于单线程，吞吐掉一截，只在零容忍不一致时用；日常用 RR 即可。
-- 误区：MVCC 在所有级别都生效。只有 RC 和 RR；RU 裸读最新版本、SERIALIZABLE 退化为加锁，都不走 MVCC 版本链。
 - 误区：RC 下靠 MVCC 就不会有幻读。RC 当前读的 Next-Key Lock 锁完即放，不堵插入，仍可能因别人插入出现「幻读感」；RR 才持有锁到事务末。
 
 </details>

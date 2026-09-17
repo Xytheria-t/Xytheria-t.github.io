@@ -19,7 +19,7 @@ category: java-collection
 
 ## 结构演进：1.7 分段锁 → 1.8 桶级锁
 
-先立结构再谈锁：Java 7 把整张表横向切成若干 **Segment（段）**，每段是一张独立的小哈希表、自带一把锁——写不同段互不阻塞，能同时写的线程数叫**并发度**；Java 8 抛掉分段，回到单张大表，把锁缩到每个桶的头节点。
+Java 7 把表横向切成若干 **Segment（段）**，每段自带一把锁——写不同段互不阻塞，能同时写的线程数叫**并发度**；Java 8 抛掉分段，回到单张大表，把锁缩到每个桶的头节点。
 
 | 维度 | Java 7：Segment 分段锁 | Java 8：CAS + synchronized |
 |---|---|---|
@@ -65,22 +65,19 @@ flowchart TD
 
 </details>
 
-逐个解释流程里的专名：
+流程里的专名：
 
-- **spread(h)**：扰动函数，`(h ^ (h >>> 16)) & 0x7fffffff`——高低 16 位异或让高位参与寻址（与 HashMap 同思路），再抹掉符号位保证 hash 非负，因为负数被挪作特殊标记。
+- **spread(h)**：`(h ^ (h >>> 16)) & 0x7fffffff`——高低 16 位异或让高位参与寻址（同 HashMap 思路），抹掉符号位保证 hash 非负，因为负数被挪作特殊标记。
 - **ForwardingNode**：hash = MOVED(-1) 的占位节点，插在「已迁走」的桶头上，读它转发去新表、写它先帮忙迁移。
-- **树化**：插入后链上已有 8 个节点（源码 `binCount >= TREEIFY_THRESHOLD - 1`，`binCount` 从头节点按 0 计，即正在插入第 9 个）才调 `treeifyBin`，且还要表长 ≥ 64，否则优先扩容稀释冲突——阈值依据与 [[HashMap]] 相同（链表长度服从泊松分布，到 8 的概率约千万分之六）。
+- **树化**：插入后链上已有 8 个节点（源码 `binCount >= TREEIFY_THRESHOLD - 1`，即正在插入第 9 个）才调 `treeifyBin`，且还要表长 ≥ 64，否则优先扩容稀释冲突——阈值依据与 [[HashMap]] 相同（泊松分布，概率约千万分之六）。
 - **扩容并发**：transfer 按步长（stride，最小 16 个桶）把桶分段「承包」给线程，各迁各的；sizeCtl 负值编码参与线程数。
 
 | sizeCtl 取值 | 含义 |
 |---|---|
 | 未初始化且 > 0 | 初始容量建议 |
-| = -1 | 正在初始化（CAS 抢到 -1 的线程干活，其余让步） |
+| = -1 | 正在初始化（CAS 抢到 -1 的线程建表，其余让步，表只建一次） |
 | < -1 | 正在扩容，负值编码参与迁移的线程数 |
 | 初始化后 > 0 | 下次扩容阈值 ≈ 容量 × 0.75 |
-
-> [!note] 初始化也要防并发
-> 多线程同时 put 触发建表时，靠 CAS 把 sizeCtl 置 -1 抢初始化权，没抢到的线程让出 CPU 等表建好——整张表只会被建一次。
 
 ## 读路径：get 为什么全程无锁
 
@@ -92,17 +89,16 @@ flowchart TD
 | 节点的值 Node.val | volatile 写 |
 | 节点的后继 Node.next | volatile 写（链表追加/树化改链不丢节点） |
 
-volatile 写 happens-before 后续的 volatile 读（语义见 [[volatile]] 与 [[JMM]]），所以写线程落盘的值读线程立刻可见；扩容期间读到 ForwardingNode 就顺着它去新表找——迁移中的桶读不丢、写不挡。
-
-> [!note] 碰到树桶读的是 TreeBin
-> 树化后的桶头是 `TreeBin`（hash = TREEBIN(-2)），它不存值，只持有树的根并维护一条链表供遍历；读顺着树/链查，写用内部 `lockState` 做读写协调，读者因此**不必阻塞**。
+- volatile 写 happens-before 后续的 volatile 读（语义见 [[volatile]] 与 [[JMM]]），写线程落的值读线程立刻可见；扩容期间读到 ForwardingNode 就顺着它去新表找，迁移中的桶读不丢、不挡。
+- **树桶读的是 `TreeBin`**（hash = TREEBIN(-2)）：它不存值，只持有树的根并维护一条链表供遍历，写用内部 `lockState` 做读写协调，读者因此不必阻塞。
+- `get` 遇扩容只转发不等待，**写不是**：扩容中的写要先 `helpTransfer` 协助搬桶再重试，同桶写仍互斥。
 
 > [!warning] 无锁读 = 弱一致读
 > get 保证「写完成后一定能读到」，但不保证「遍历瞬间看到全局精确快照」——这是设计语义，不是 bug。
 
 ## 计数：size() 为什么是近似值
 
-所有写都往一个计数器上 CAS，高并发下会撞成热点（[[CAS 与原子类]] 里的自旋问题）。CHM 因此把 LongAdder 的**分桶计数**直接搬了进来：
+所有写都往一个计数器上 CAS，高并发下会撞成热点（自旋问题见 [[CAS 与原子类]]），CHM 因此搬来了 LongAdder 的**分桶计数**：
 
 ```chain
 写入计数 | 先 CAS baseCount | 冲突
@@ -111,13 +107,12 @@ volatile 写 happens-before 后续的 volatile 读（语义见 [[volatile]] 与 
 ```
 
 - **baseCount** 是基数，**CounterCell[]** 是分桶数组（`@Contended` 填充防伪共享），写冲突越大、cell 越多。
-- size() 是求和瞬间的近似值；并发修改中它不保证精确。要长整型防溢出用 mappingCount()；要精确计数就换外部同步或专门的计数结构。
+- size() 是求和瞬间的近似值，并发修改中不保证精确；要长整型防溢出用 mappingCount()；要精确计数就换外部同步或专门的计数结构。
 
 ## null 禁令与弱一致迭代
 
-**为什么 key/value 都不许 null**：并发下 `get(k)` 返回 null 有**二义性**——分不清「键不存在」还是「存了 null」。单线程 HashMap 可以补一次 containsKey 确认，并发下这是 check-then-act：两次调用之间键可能被别的线程改掉，补判也不可靠，干脆禁止。
-
-迭代器是**弱一致**（weakly consistent）：创建后先保证遍历到「创建时刻已存在」的元素，之后的增删可能看到可能看不到，但**不抛** ConcurrentModificationException（HashMap 是 fail-fast 快速失败，一改就抛）。
+- **key/value 都不许 null**：并发下 `get(k)` 返回 null 有二义性——分不清「键不存在」还是「存了 null」；单线程 HashMap 可以补一次 containsKey，并发下这是 check-then-act，中间键可能被别的线程改掉，补判也不可靠，干脆禁止。
+- 迭代器是**弱一致**（weakly consistent）：保证遍历到「创建时刻已存在」的元素，之后的增删可能看到可能看不到，但**不抛** ConcurrentModificationException（HashMap 是 fail-fast，一改就抛）。
 
 | 维度 | HashMap | Hashtable | ConcurrentHashMap |
 |---|---|---|---|
@@ -128,8 +123,10 @@ volatile 写 happens-before 后续的 volatile 读（语义见 [[volatile]] 与 
 
 ## 落地：复合操作的正确写法
 
-> [!danger] 单操作原子 ≠ 复合原子
-> put/get 各自原子，但「先 get 判断、再 put」是两步，中间可能被插队。计数、去重这类逻辑必须用内部锁同一桶头的整段原子方法。
+put/get 各自原子，但「先 get 判断、再 put」是两步，中间可能被插队——计数、去重这类逻辑必须用锁同一桶头的整段原子方法。
+
+> [!danger] computeIfAbsent 里禁止递归更新同一张表
+> 计算函数内部再改同一张表就是递归更新：JDK 8 **不做检测**，两个 key 落在同一桶时可能把桶结构改坏甚至死循环、跨桶循环依赖则可能死锁；JDK 9+ 会检测并直接抛 `IllegalStateException: Recursive update`。映射函数只做「算出值」这一件事。
 
 ```java
 // 反例：check-then-act，两步之间可能被其他线程改掉
@@ -141,49 +138,28 @@ map.computeIfAbsent(k, key -> expensiveLoad(key));
 map.merge(k, 1, Integer::sum);          // 并发计数
 ```
 
-> [!danger] computeIfAbsent 里禁止递归更新同一张表
-> 计算函数内部再改同一张表就是递归更新：JDK 8 **不做检测**，两个 key 落在同一桶时可能把桶结构改坏甚至死循环、跨桶循环依赖则可能死锁；JDK 9+ 会检测并直接抛 `IllegalStateException: Recursive update`。映射函数只做「算出值」这一件事，别在里面写回本表。
-
-> [!warning] 写操作并非永不等待
-> 撞上扩容时写线程会先 `helpTransfer` 协助搬桶再重试，这段时间是确实的等待；此外同一桶上的写仍互斥。所谓「读无锁」指的是 `get`，不是写。
-
 <details>
-<summary>面试问答 (4题)</summary>
-
-Q：1.8 为什么用 synchronized 不用 ReentrantLock？
-
-A：锁粒度已到桶级，冲突少、持锁短，synchronized 锁升级后的轻量路径足够；还省去每个桶头挂 AQS 结构的内存，JDK 6 后性能也不落后。
+<summary>面试问答 (3题)</summary>
 
 Q：多线程怎么一起扩容？
 
-A：transfer 把桶按步长（最小 16）分段承包给线程，各迁各的；迁完的桶头放 ForwardingNode，其他线程读到它要么转发读、要么协助迁，sizeCtl 负值记录参与线程数。
+A：transfer 按步长（最小 16 个桶）分段承包给线程，各迁各的；迁完的桶头放 ForwardingNode，其他线程读到它要么转发读、要么协助迁，sizeCtl 负值记录参与线程数。
 
 Q：size() 准确吗？
 
-A：不保证。它是 baseCount 加各 CounterCell 的瞬时求和（LongAdder 思路），并发写时是近似值；要精确需外部同步。
-
-Q：computeIfAbsent 里再 put 同一个 key 会怎样？
-
-A：这是递归更新。JDK 8 不检测，同桶可能结构损坏/死循环，跨桶循环依赖可能死锁；JDK 9+ 检测到就抛 `IllegalStateException: Recursive update`。映射函数里只做纯计算。
-
-Q：get 完全不阻塞吗？
-
-A：`get` 全程无锁不阻塞（遇 ForwardingNode 转发去新表、遇 TreeBin 走树/链查）。但写不一样：扩容中的写要先协助迁移，同桶写还互斥。
+A：不保证。它是 baseCount 加各 CounterCell 的瞬时求和（LongAdder 思路），并发写时只是近似值；要精确需外部同步。
 
 Q：ConcurrentHashMap 能替代 Hashtable 吗？
 
-A：能。Hashtable 只为兼容旧 API 保留；Collections.synchronizedMap 也是全对象锁，性能远不如桶级锁。
+A：能。Hashtable 只为兼容旧 API 保留，`Collections.synchronizedMap` 同样是全对象锁，性能远不如桶级锁。
 
 </details>
 
 <details>
-<summary>常见误区 (6条)</summary>
+<summary>常见误区 (3条)</summary>
 
-- 误区：方法线程安全，组合起来也安全。check-then-act 复合操作不原子，要用 putIfAbsent / compute / merge。
 - 误区：默认并发度 16 是 1.8 的概念。16 是 1.7 的段数；1.8 并发度取决于桶数，构造参数只当初始容量提示。
 - 误区：无并发也该用 ConcurrentHashMap。单线程下 volatile 读和 CAS 有额外成本，HashMap 更快，按并发需求选。
 - 误区：get 读到「旧一拍」的值是实现缺陷。弱一致是设计语义，可见性由 volatile 保证，写完成必可见。
-- 误区：读写都永不阻塞。写遇扩容要协助迁移、同桶写互斥；只有 `get` 是无锁的。
-- 误区：把 CHM 当缓存就能在 computeIfAbsent 里回源并回写。映射函数内递归更新本表，JDK 8 可能死循环、JDK 9+ 直接抛异常；需要回源就先算好值再 `put`。
 
 </details>
