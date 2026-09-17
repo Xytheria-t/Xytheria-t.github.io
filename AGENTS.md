@@ -10,7 +10,7 @@
 - 标题 = 具体术语，禁抽象后缀（体系/核心/原理/机制/进阶/指南/总结/详解/全景/综述/剖析/专题）；MOC 标题 = 聚合的具体主题（≤3 个用「与/、」连），不新造上层概念。
 - MOC 可用 `featured: <核心子笔记>` 锁核心入口置顶；**只在「核心入口 = 阅读序第一位」时才写**，否则会把某篇顶到因果序前面；分组渲染（`MOC_FACETS`）下 `pinned` 本就不生效，写了是死配置。没有核心入口就别写。
 - 分拆铁律：从偏重笔记（≈占原篇 1/3 篇幅，或可独立成对比/选型/演进主题）拆出的子卡片一律不进任何 MOC 墙，只在原笔记正文 `[[双链]]` 链过去——MOC 墙只做领域入口，不做拆分收纳。
-- 新笔记必须挂进对应 MOC（否则孤儿）；**跨卷主题可同时挂多个 MOC**（两墙都出现不算重复）；正文用到的概念要么 `[[双链]]` 要么随文一句话解释，否则断链；跨笔记重复收敛为双链指向主笔，缺口才由新篇补。笔记是复习材料：裸术语与抽象断言复习时想不起来，一律先解释再用。
+- 新笔记必须挂进对应 MOC（否则孤儿）；**跨卷主题可同时挂多个 MOC**（两墙都出现不算重复）；正文用到的概念要么 `[[双链]]` 要么随文一句话解释，否则断链；跨笔记重复收敛为双链指向主笔，缺口才由新篇补。笔记是复习材料：裸术语与抽象断言复习时想不起来，一律先解释再用。唯一例外是速记收件箱 `随问随记`：**卷外常驻**——不进根墙卷、不写进 `MOC.md`，只由右上角 `clipDock` 按钮进入；速记卡片（`clip: true`）同样只挂收件箱，**不回挂学科 MOC 墙**（面试八股墙只收八股笔记）。
 - 面试问答、常见误区用 `<details>` 折叠收纳；**`<details>` 只装文本与图（` ```mermaid ` / ` ```gantt `），代码块一律放正文**——要展示代码就开正文节（`## 落地：<落点>`），别塞进折叠块（已断言进 `vinea_check`）。callout 分工：`[!note]` 边界澄清、`[!tip]` 关联实用、`[!warning]` 易错点，紧贴它注解的内容放置，不甩到节末。
 - 给 MOC 加分组/chip 三处同步：MOC 正文双链、`.build/tpl/42-js-wall.js` 的 `MOC_FACETS[slug].groups[].ids`、`traits` chip 文案。
 - leetcode 题卡排序：frontmatter `difficulty: 简单/中等/困难`，`order` 仍写题号；子墙（Hot100-*）一律按难度从易到难排，同难度按题号（`build.mjs` 的 `DIFF_RANK` → `42-js-wall.js` 的 `orderOf`）。新增题卡必须带 `difficulty`，MOC 正文双链序同步为难度序（spine/companion 走双链序）。
@@ -20,7 +20,7 @@
 ## 构建与校验
 
 - `Vinea.html` 只由 `node .build/build.mjs` 生成（按 `TPL_MANIFEST` 清单拼接 `.build/tpl/` 模块），绝不手改。改内容 → `notes/*.md`；改版式/交互 → `.build/tpl/`（新模块必须登记清单；模块头注释 = 该模块铁律，动手前先读）。构建不碰 git。
-- 必保 feature（spine 迷你地图、companion 章节胶囊、双链 hover 预览、gantt 渲染、mermaid 折叠懒渲染、代码行号、鼠标侧键导航、锚点）与导航模型（单一驱动源 = 浏览器历史）已断言化进 `verify-features`；设计刻意变更时先改断言再改实现。
+- 必保 feature（spine 迷你地图、companion 章节胶囊、双链 hover 预览、右上角收件箱入口、gantt 渲染、mermaid 折叠懒渲染、代码行号、鼠标侧键导航、锚点）与导航模型（单一驱动源 = 浏览器历史）已断言化进 `verify-features`；设计刻意变更时先改断言再改实现。
 - 改笔记后必重跑 build（预览面板读产物，漏跑表现「改了没生效」）；常改可挂 `node .build/watch.mjs`（自动重编 + verify）。
 - 提交硬约束：`.githooks/pre-commit`（`core.hooksPath=.githooks`）会跑 build + `verify.mjs`，任一失败即拒绝提交；绕过它就等于把构建/校验责任又交回给记忆。产物 `Vinea.html`/`vendor/` 被 `.gitignore` 排除不入库，所以钩子卡的是「源可构建 + 校验全绿」，不是产物 diff。
 - 写/改 notes 后必跑 `node .build/verify.mjs` 全绿才算完成（语法冒烟、DOM 固定件、孤儿/可达性、mastery、spans、features、groups）；内容级机械校验 `node .build/vinea_check.mjs`（死链/fence/chain 栏数/summary 重名/details 内代码块等）。

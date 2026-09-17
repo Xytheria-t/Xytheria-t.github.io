@@ -28,6 +28,8 @@
 - `_harness` 的 `script` 只切 script 段 → 验 CSS 规则假 FAIL。验样式 re.search 整个 html（见通则）。
 - 给 `MOC_FACETS` 子 MOC（`java-锁`）加子卡片只改 MOC 正文 `[[双链]]` 不够 → facet 墙按白名单静默丢未登记 id。三处同步：正文双链 + `ids` + `traits`。
 - 加新 category/领域忘改 `build.mjs` 的 `GROUP` → 落到末尾「其他」卷且 `verify-groups` FAIL。`GROUP` 是根墙卷序/卷内序唯一来源（`MOC.md` links 序对根墙无效），加卷先改它。
+- 卷外常驻的域（`clip` / 随问随记）**别**登记进 `GROUP`、**别**写进 `MOC.md` 双链：它只走壳层右上角 `#clipDock`。`build.mjs` 从 `30-tail.html` 现读按钮目标并标 `dock`，`verify-groups` 反查它不落任何卷、`verify-health` 据此豁免孤儿/可达（按钮没了/指向改了 → 这两条断言直接红）。
+- 速记（`clip: true`）回挂学科 MOC → 面试八股墙被速记卡片污染（用户明确否掉）。速记只挂收件箱 `随问随记`，可达性走「常驻入口」这条线（`verify-health` 以 dock 为第二座入口起算，别当成设计漏洞删回去）。`计算机网络` 这类注册了 `MOC_FACETS` 的墙撤卡片要三处同步（正文双链 + `groups[].ids` + `traits`），只删正文留死配置。
 - `verify-mastery` 写死笔记 id → 结构一变假 FAIL。现动态推导路径，找不到记 `skip` 不 FAIL。
 - `41-js-mastery.js` MOC 卡熟练度聚合整棵子树，flatten 穿透多层 MOC 是有意的 → 别当 bug「优化」掉；子卡染色走 `--mc` 覆盖 `--c`。
 - verify 用全局选择器计数 → 同组件多区域翻倍假 FAIL。断言限定到具体容器。

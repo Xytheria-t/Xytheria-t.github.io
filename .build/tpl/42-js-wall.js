@@ -96,7 +96,7 @@ function wallHTML(n){
       groups: [
         { name:'基础模型', ids:['网络协议'] },
         { name:'传输层', ids:['tcp','udp'] },
-        { name:'应用层', ids:['http','https','websocket-速记'] },
+        { name:'应用层', ids:['http','https'] },
         { name:'会话与认证', ids:['cookie、session与token'] },
       ],
       traits: {
@@ -105,7 +105,6 @@ function wallHTML(n){
         'udp':'无连接 · 尽力交付',
         'http':'请求-响应 · 无状态',
         'https':'TLS 加密 · 身份认证',
-        'websocket-速记':'全双工 · 帧传输',
         'cookie、session与token':'会话管理 · 三种凭证',
       },
     },

@@ -89,11 +89,13 @@ const GROUP = [
   { num:'Ⅰ', name:'Java 生态',    cats:['javase','java-collection','jvm','juc','spring'], layout:'tiles' },
   { num:'Ⅱ', name:'架构与系统设计', cats:['architecture','system-design','network'], layout:'spread' },
   { num:'Ⅲ', name:'中间件',        cats:['mysql','redis','mq','es'],       layout:'feature' },
-  { num:'Ⅳ', name:'算法',         cats:['leetcode'],                        layout:'index' },
-  { num:'Ⅴ', name:'简历项目',     cats:['projects'],                        layout:'feature' },
-  { num:'Ⅵ', name:'随问随记',     cats:['clip'],                           layout:'tiles' },
-  { num:'Ⅶ', name:'AI 工具',      cats:['ai-tools'],                       layout:'tiles' },
+  { num:'Ⅳ', name:'AI 工具',      cats:['ai-tools'],                       layout:'tiles' },
+  { num:'Ⅴ', name:'算法',         cats:['leetcode'],                        layout:'index' },
+  { num:'Ⅵ', name:'简历项目',     cats:['projects'],                        layout:'feature' },
 ];
+// 卷外常驻：右上角收件箱按钮（tpl/30-tail.html 的 #clipDock）指向的笔记不进根墙卷、不入「其他」，只由常驻按钮进入。
+// 目标从壳层 HTML 现读 —— 按钮改指向即同步；常驻入口的域（如 clip）别登记进 GROUP，登记了会多出一卷。
+const DOCK_TARGET = (readFileSync(PROJ + '/.build/tpl/30-tail.html', 'utf8').match(/id="clipDock"[^>]*data-target="([^"]+)"/) || [])[1] || '';
 // 题卡难度档 → 排序权重（子 MOC 墙按难度从易到难排，同档内退回 order=题号）
 const DIFF_RANK = { '简单':1, '中等':2, '困难':3 };
 const GROUP_OF = {};
@@ -630,6 +632,10 @@ for (const n of Object.values(NOTES)) {
 
 const ROOT_ID = slugify(raw['MOC']?.meta?.title || 'MOC');
 
+// 常驻入口目标 → 标 dock：verify-groups 反查它不落任何卷，verify-health 据此豁免孤儿/可达（按钮本身就是入口）
+const DOCK_ID = DOCK_TARGET ? resolveLink(DOCK_TARGET) : null;
+if (DOCK_ID) NOTES[DOCK_ID].dock = true;
+
 function emit(){
   // featured 指向不存在的子笔记：build 末尾统一打印（不改 exit code —— 仍然产出文件，警告给作者看）
   if (_featuredMiss.length) {
@@ -637,10 +643,13 @@ function emit(){
     _featuredMiss.forEach(function(l){ console.log(l); });
   }
   // in-degree=1（仅 1 条反向链接）的笔记：薄引用警告，方便识别未挂入知识网的新笔记
+  // 卷外常驻（收件箱）的下挂笔记不算薄引用：只挂收件箱就是它的设计，提示「补挂父 MOC」是噪音
   const _indeg = {};
   for (const id of Object.keys(NOTES)) _indeg[id] = 0;
   for (const n of Object.values(NOTES)) for (const l of (n.links||[])) if (NOTES[l]) _indeg[l]++;
-  const thin = Object.keys(NOTES).filter(function(id){ return id !== ROOT_ID && _indeg[id] === 1; });
+  const _dockKids = new Set();
+  for (const n of Object.values(NOTES)) if (n.dock) (n.links||[]).forEach(function(l){ _dockKids.add(l); });
+  const thin = Object.keys(NOTES).filter(function(id){ return id !== ROOT_ID && _indeg[id] === 1 && !_dockKids.has(id); });
   if (thin.length) {
     console.log('== 薄引用笔记（in-degree=1，仅 1 条反向链接，建议补挂父 MOC） ==');
     thin.forEach(function(id){ console.log(`  • ${id} (${NOTES[id].title})`); });

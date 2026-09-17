@@ -4,6 +4,7 @@
 import { readFileSync, existsSync, readdirSync } from 'fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
+import { notes as readNotes } from './_harness.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const product = readFileSync(resolve(root, 'Vinea.html'), 'utf8');
@@ -62,6 +63,15 @@ const tplAll = readdirSync(TPL);
 const xiluHit = tplAll.filter(f => /xilu|study\.html/i.test(readFileSync(resolve(TPL, f), 'utf8')));
 ck('tpl 模块无 xilu/study.html 残留（习录已迁出，勿加回）', xiluHit.length === 0, xiluHit.join(', '));
 ck('产物无未注入占位符（build 兜底断言之外的双保险）', !product.includes('/*__NOTES__*/') && !product.includes('/*__ROOT__*/'));
+
+// ---- 卷外常驻入口（右上角收件箱按钮）：壳层 data-target 必须命中带 dock 标记的笔记，两侧同源 ----
+console.log('\n== 卷外常驻入口 ==');
+const dockTarget = (product.match(/id="clipDock"[^>]*data-target="([^"]+)"/) || [])[1] || '';
+const { NOTES: dockNotes } = readNotes();
+const docked = Object.keys(dockNotes).filter(id => dockNotes[id].dock);
+ck('clipDock 常驻按钮在壳层且带 data-target', !!dockTarget, dockTarget);
+ck('常驻入口恰好 1 篇，目标 = 按钮 data-target（进不去 = 按钮白挂，verify-health 也豁免不成）',
+   docked.length === 1 && docked[0] === dockTarget, docked.join(', '));
 
 console.log('\n' + (fail ? 'FEATURE CHECK FAILED (' + fail + ')' : 'FEATURE CHECK OK'));
 process.exit(fail ? 1 : 0);

@@ -76,6 +76,11 @@ const allIds = bands.flatMap(b => [...b.matchAll(/<article class="ventry[^"]*" d
 ok(allIds.length === list.length, `渲染卡片数 = ${list.length}（实际 ${allIds.length}）`);
 ok(new Set(allIds).size === allIds.length, '无重复卡片');
 
+// 5. 卷外常驻（右上角 #clipDock 指向的笔记）：只走壳层按钮，不得落进任何卷（它天然不登记 GROUP，这里反查渲染结果）
+const dockIds = Object.keys(NOTES).filter(id => NOTES[id].dock);
+ok(dockIds.length > 0, '存在卷外常驻笔记（dock 标记）');
+ok(dockIds.every(id => !allIds.includes(id)), `卷外常驻笔记（${dockIds.join(', ')}）不进根墙卷`);
+
 console.log('PASS ' + pass.length);
 pass.forEach(m => console.log('  ✓ ' + m));
 if(fail.length){
