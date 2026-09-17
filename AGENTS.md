@@ -37,5 +37,6 @@
 ## 部署与边界
 
 - 公网镜像：push `master` 触发 `.github/workflows/deploy.yml` 构建并强推 `gh-pages`；部署坑见 PITFALLS·部署。
+- **改完即推**：notes / tpl 改完、校验全绿后直接提交并推送 `master`，不必再问（用户明确授权）；HTTPS 被阻断时的绕行流程见 PITFALLS·部署。
 - 习录已迁出为独立工具 `D:\Tool\Time\time.html`（数据与 Vinea 不互通），tpl 勿再加回 xilu 代码（verify-features 断言清零）；想恢复先讨论。
 - 改版式/配色的设计边界：配色主权、单主题无暗色、禁渐变文字/emoji 图标、装饰字号 ≤ 副标、动画守 `prefers-reduced-motion`；细化坑见 PITFALLS·设计主权。

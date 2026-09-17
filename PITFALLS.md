@@ -71,6 +71,17 @@
 - workflow 用了 `on.push.paths` 过滤时**不能同时**用 `workflow_dispatch`（paths 跟 dispatch 在 `on:` 下互斥，YAML 静默接受但 GitHub 拒跑，状态显示 `workflow file issue`、jobs 空）。要么全 push、要么全 dispatch，二选一。
 - workflow 文件本地写 `LF`，git 在 Windows 上常警告「will be replaced by CRLF」——CRLF 也行，但 **BOM (`﻿`, U+FEFF) 不行**。Write 工具产生文件偶尔会带 BOM，save 后 `head -1 | xxd` 校验。
 - workflow `run:` 块里有中文注释/字符串完全 OK（UTF-8），但**多行 block `run: |` 后每行缩进必须 ≥block 起始缩进**，否则 GitHub Actions YAML parser 把它当 step body 而不是 block。
+- **本机到 `github.com:443` 可能被网络阻断**（`git push` 报 `Recv failure: Connection was reset` 或连接超时）。判据：`curl -m 15 https://github.com` 超时、`https://api.github.com` 返回 200、`ssh -T git@github.com` 报 `Permission denied (publickey)`——即 443 断、API 与 SSH 22 端口通。**修法**：`gh` 持 `repo` 权限时，临时注册一枚写权限部署密钥走 SSH 推，推完立刻删除：
+  ```bash
+  KEY=~/.ssh/vinea_tmp_push
+  ssh-keygen -t ed25519 -f "$KEY" -N "" -q
+  gh api -X POST repos/Xytheria-t/Xytheria-t.github.io/keys -f title=temp-push \
+    -f key="$(cat "$KEY.pub")" -F read_only=false --jq .id     # 记下 id
+  GIT_SSH_COMMAND="ssh -i $KEY -o IdentitiesOnly=yes" \
+    git -c url."git@github.com:".insteadOf="https://github.com/" push origin master
+  gh api -X DELETE repos/Xytheria-t/Xytheria-t.github.io/keys/<id> && rm -f "$KEY" "$KEY.pub"
+  ```
+  用 `insteadOf` 重写而非新加 remote，`refs/remotes/origin/master` 才会正常更新；Git Bash 下 `gh api` 端点省略前导斜杠，否则被当成本地路径改写。
 
 ## 导航 / 浏览器历史栈
 > 模型见「单一驱动源」那条。
