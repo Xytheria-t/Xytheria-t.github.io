@@ -41,6 +41,7 @@
 - `spread` 常驻展开时 `.band--spread .v-preview{max-height:none}` 特异性 (0,2,0) 低于 `.ventry:hover` (0,3,0) → hover 反而收起。覆盖选择器把 `:hover` 一起写（见通则）。
 - `chain` trigger pill 塞进 `link` 容器 `position:absolute` → pill 挤成单字竖排。pill 属 step 环节标签，放 `.chain-t` inline，删 link 里的 pill/spacer。
 - 行号 `.ln{display:flex}` 吞前导缩进/词间空格（Chromium 丢 whitespace-only 匿名 flex item）。改 `display:block` + `code{white-space:pre}`；`::before` 换 `inline-block`。回归：抓 `getComputedStyle(ln).display==='block'` 且 textContent 含完整 `public class X`。
+- hljs 多行 token（yaml 块标量 `|`/`>`、Java text block、bash heredoc）把 `<span>` 开到 `\n` 之后才关 → `highlightBlock` 直接按 `\n` 切行后 `.ln` 互相嵌套、行尾多孤儿 `</span>`（现象：行号断成两截、代码逃出行面板）。修法 `splitLinesBalanced`：每个 `\n` 处补关全部未闭合 span、下一行原样重开；断言在 `verify-code.mjs`。
 - `clip-path` 裁掉向外扩的 `outline`/`box-shadow`（focus ring 看不见）→ 焦点环改 `inset` box-shadow，或交父元素画。斜切条无缝咬合用 `margin-right:-X` + `polygon`，首尾段单独直角收口，单段 `:only-child{clip-path:none}`。
 
 ## 设计主权

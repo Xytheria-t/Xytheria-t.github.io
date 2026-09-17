@@ -56,6 +56,7 @@ const ACCENT = {
   mysql: '#2979FF',                 // 亮蓝 · MySQL
   redis: '#FF1744',                 // 鲜红 · Redis
   mq: '#D500F9',                    // 品红 · MQ
+  es: '#00BFA5',                    // 绿松石 · Elasticsearch
   leetcode: '#FFD600',              // 金黄 · LeetCode
   projects: '#FF4081',
   'ai-tools': '#AEEA00',              // 青柠 · AI Tools              // 玫红 · Projects
@@ -73,20 +74,21 @@ const ACCENT_INK = {
   mysql: '#1E5FD8',
   redis: '#C51162',
   mq: '#AA00AA',
+  es: '#00796B',
   leetcode: '#F5A600',
   projects: '#C60055',
   'ai-tools': '#827717',
 };
 const accentOf = (cat) => ACCENT[cat] || '#C9B08A';
 const accentInkOf = (cat) => ACCENT_INK[cat] || '#8A6D3B';
-const CAT_LABEL = { root:'Overview', 'java-collection':'Collections', 'javase':'JavaSE', jvm:'JVM', juc:'Concurrency', spring:'Spring', architecture:'Architecture', mysql:'MySQL', redis:'Redis', mq:'MQ', leetcode:'LeetCode', 'system-design':'System Design', projects:'Projects', network:'Network', 'ai-tools':'AI Tools' };
+const CAT_LABEL = { root:'Overview', 'java-collection':'Collections', 'javase':'JavaSE', jvm:'JVM', juc:'Concurrency', spring:'Spring', architecture:'Architecture', mysql:'MySQL', redis:'Redis', mq:'MQ', es:'Elasticsearch', leetcode:'LeetCode', 'system-design':'System Design', projects:'Projects', network:'Network', 'ai-tools':'AI Tools' };
 
 // 卷（首页根墙分区）—— 数组顺序 = 卷序；cats 顺序 = 卷内位次
 // layout = 卷目录带版式（4 种词汇表）：tiles 磁贴墙 / spread 对开页 / feature 大标页 / index 索引列表；缺省 tiles
 const GROUP = [
   { num:'Ⅰ', name:'Java 生态',    cats:['javase','java-collection','jvm','juc','spring'], layout:'tiles' },
   { num:'Ⅱ', name:'架构与系统设计', cats:['architecture','system-design','network'], layout:'spread' },
-  { num:'Ⅲ', name:'中间件',        cats:['mysql','redis','mq'],              layout:'feature' },
+  { num:'Ⅲ', name:'中间件',        cats:['mysql','redis','mq','es'],       layout:'feature' },
   { num:'Ⅳ', name:'算法',         cats:['leetcode'],                        layout:'index' },
   { num:'Ⅴ', name:'简历项目',     cats:['projects'],                        layout:'feature' },
   { num:'Ⅵ', name:'随问随记',     cats:['clip'],                           layout:'tiles' },
@@ -150,6 +152,32 @@ const unescape = (s) =>
   s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
     .replace(/&quot;/g, '"').replace(/&#39;/g, "'");
 
+// hljs 的多行 token（yaml 块标量 `|`、Java text block、bash heredoc…）会把 <span> 开到 \n 之后才关，
+// 直接按 \n 切行会让后面的 .ln 嵌进上一行的未闭合 span、行尾多出孤儿 </span>（现象：行号断成两截、
+// 代码逃出行面板）。切行前在每个 \n 处把未闭合 span 补关、下一行原样重开，保证每行标签自平衡。
+function splitLinesBalanced(src) {
+  const out = [];
+  const open = [];
+  let line = '';
+  const re = /<span [^>]*>|<\/span>|\n|[^<\n]+|</g;
+  let m;
+  while ((m = re.exec(src)) !== null) {
+    const t = m[0];
+    if (t === '\n') {
+      out.push(line + '</span>'.repeat(open.length));
+      line = open.join('');
+    } else if (t === '</span>') {
+      open.pop(); line += t;
+    } else if (t.startsWith('<span ')) {
+      open.push(t); line += t;
+    } else {
+      line += t;
+    }
+  }
+  out.push(line);
+  return out;
+}
+
 function highlightBlock(html) {
   return html.replace(
     /<pre><code class="language-(\w+)(?::([^\s"<>]+))?">([\s\S]*?)<\/code><\/pre>/g,
@@ -161,7 +189,7 @@ function highlightBlock(html) {
       } else {
         inner = _esc(raw);
       }
-      const arr = inner.split('\n');
+      const arr = splitLinesBalanced(inner);
       while (arr.length > 1 && arr[arr.length - 1] === '') arr.pop();
       const lines = arr.map((l) => `<span class="ln">${l || ' '}</span>`).join('');
       const langName = (lang === 'text' || lang === 'plain') ? 'TEXT' : lang.toUpperCase();

@@ -81,6 +81,17 @@ function wallHTML(n){
         'concurrenthashmap':'桶级锁 · 高并发 Map',
       },
     },
+    'ai-工具': {
+      groups: [
+        { name:'能力扩展', ids:['ai-agent-skill','mcp'] },
+        { name:'知识增强', ids:['rag'] },
+      ],
+      traits: {
+        'ai-agent-skill':'渐进式披露 · 按需加载',
+        'mcp':'工具接入协议 · 无状态核心',
+        'rag':'检索增强 · 分块与重排',
+      },
+    },
     '计算机网络': {
       groups: [
         { name:'基础模型', ids:['网络协议'] },
