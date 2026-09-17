@@ -58,12 +58,12 @@
 - 用户站根 URL 只认 `index.html`，不认 `Vinea.html` → 部署产物必须 `cp Vinea.html _deploy/index.html`，否则首页 404。
 - `on.push.paths` 与 `workflow_dispatch` 在 `on:` 下互斥 → 同时写 GitHub 拒跑（`workflow file issue`、jobs 空）。二选一。
 - workflow 文件 LF/CRLF 都行但 **BOM（U+FEFF）不行**（Write 工具偶尔带 BOM，`head -1 | xxd` 校验）；`run: |` 块内每行缩进必须 ≥ block 起始缩进，否则 YAML 把后续行当 step body。
-- 本机到 `github.com:443` 可能被阻断（`git push` 报 `Recv failure: Connection was reset` 或连接超时）。判据：`curl -m 15 https://github.com` 超时、`api.github.com` 返 200、`ssh -T git@github.com` 报 `publickey`——即 443 断、API 与 SSH 通。修法（`gh` 有 `repo` 权限时）：临时注册写权限部署密钥走 SSH 推，推完即删：
+- 本机到 `github.com:443` 可能被阻断（`git push` 报 `Recv failure: Connection was reset`、连接超时或 `SSL certificate ... unable to get local issuer certificate`）。判据：`curl -m 15 https://github.com` 超时、`api.github.com` 返 200——即 git 通道断、API 通；SSH 22 也可能被拒（`Connection refused`），须改走 `ssh.github.com:443`。修法（`gh` 有 `repo` 权限时）：临时注册写权限部署密钥走 SSH 推，推完即删：
   ```bash
   KEY=~/.ssh/vinea_tmp_push; ssh-keygen -t ed25519 -f "$KEY" -N "" -q
   KID=$(gh api -X POST repos/Xytheria-t/Xytheria-t.github.io/keys -f title=temp-push \
     -f key="$(cat "$KEY.pub")" -F read_only=false --jq .id)
-  GIT_SSH_COMMAND="ssh -i $KEY -o IdentitiesOnly=yes" \
+  GIT_SSH_COMMAND="ssh -i $KEY -o IdentitiesOnly=yes -o Hostname=ssh.github.com -o Port=443" \
     git -c url."git@github.com:".insteadOf="https://github.com/" push origin master
   gh api -X DELETE repos/Xytheria-t/Xytheria-t.github.io/keys/$KID; rm -f "$KEY" "$KEY.pub"
   ```
