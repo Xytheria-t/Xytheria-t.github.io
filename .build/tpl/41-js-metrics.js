@@ -22,6 +22,15 @@ function densityOf(html){
   return Math.max(0.08, Math.min(1, structCharsOf(html) / total));
 }
 
+/* ---- 卡面篇幅：「≈2.4K 字 · 」只描述内容本身，两台设备一致。
+   不给密度：密度是「节」级指标（正文 .rt-cap / spine 用），整篇算出来中位 74%、p25~p75 = 62~79%，
+   每张卡都是同一个数，等于噪声（实测见 PITFALLS·度量）。 ---- */
+function sizeLabel(html){
+  const n = charCount(html);
+  if(!n) return '';
+  return '≈' + (n >= 1000 ? (n/1000).toFixed(1) + 'K' : n) + ' 字';
+}
+
 /* ---- 相对时间：墙上「更新于 X」用它把 mtime 说成人话 ---- */
 function relTime(ts){
   const d = Math.floor((Date.now() - ts) / 86400000);

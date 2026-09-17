@@ -81,6 +81,20 @@ const dockIds = Object.keys(NOTES).filter(id => NOTES[id].dock);
 ok(dockIds.length > 0, '存在卷外常驻笔记（dock 标记）');
 ok(dockIds.every(id => !allIds.includes(id)), `卷外常驻笔记（${dockIds.join(', ')}）不进根墙卷`);
 
+// 6. 卡面篇幅：原子笔记卡必带「≈N 字」，MOC 卡必不带（篇幅对 MOC 无意义）
+const noteMoc = Object.keys(NOTES).find(id => NOTES[id].type === 'moc' && (NOTES[id].links || []).some(x => NOTES[x] && NOTES[x].type !== 'moc'));
+const nw = noteMoc ? ctx.wallHTML(NOTES[noteMoc]) : '';
+const cardsOf = w => w.split('<article class="ventry').slice(1)
+  .map(c => ({ id: (c.match(/data-target="([^"]+)"/) || [])[1], html: c }));
+const nCards = cardsOf(nw).filter(c => c.id && NOTES[c.id]);
+const leafCards = nCards.filter(c => NOTES[c.id].type !== 'moc');
+const mocCards = nCards.filter(c => NOTES[c.id].type === 'moc');
+const SZ = /≈[\d.]+K? 字/;
+ok(noteMoc && leafCards.length > 0, `子墙（${noteMoc || '无'}）有原子笔记卡可验篇幅角标`);
+ok(leafCards.every(c => SZ.test(ctx.sizeLabel(NOTES[c.id].html))), '篇幅角标格式 = ≈N 字');
+ok(leafCards.every(c => c.html.includes(ctx.sizeLabel(NOTES[c.id].html))), '每张原子笔记卡都渲染出篇幅角标');
+ok(mocCards.every(c => !/\d 字/.test(c.html)), 'MOC 卡不带篇幅角标');
+
 console.log('PASS ' + pass.length);
 pass.forEach(m => console.log('  ✓ ' + m));
 if(fail.length){

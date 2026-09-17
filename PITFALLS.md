@@ -15,6 +15,7 @@
 - 验 CSS 必须 re.search 整个 `Vinea.html`；`_harness` 的 `script` 只切 `<script>` 段，匹配不到样式。
 - `display:none`（CSS 初始态）+ JS 用 `style.display=''` 显示 → 内联一空样式表立刻接管，块永远空白。显示侧给具体值（`block`/`flex`）。
 - localStorage 结构校验只查必备结构，nullable 状态字段单独类型收编，别当必填判死。
+- 篇幅/密度这类度量按「节」算才有区分度：整篇密度实测中位 74%、p25~p75 = 62~79%（且嵌套结构会重复计数），搬到卡片上等于每张同一个数。卡面只给字数，密度留给正文节级角标。
 
 ## 构建管线
 - 手改 `Vinea.html`（build 产物）→ 重跑 build 被 `tpl/` 清单拼接覆盖，表现「改了没生效」。只动 `.build/tpl/` 模块，改完必重跑 build。

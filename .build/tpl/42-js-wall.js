@@ -156,13 +156,18 @@ function wallHTML(n){
     const c = typeof color === 'string' ? color : t.accent;
     const chip = opts && opts.chip ? opts.chip : ''; // 语义 chip：注册了 MOC_FACETS 的卡走 chip 路线，不再叠「1 篇/更新于」噪音
     let dataHtml = '';
+    // 篇幅只对原子笔记有意义：MOC 的「篇幅」是整棵子树总和，与 band 头的篇数重复
+    const size = t.type === 'moc' ? '' : sizeLabel(t.html);
     if(chip){
-      dataHtml = '<div class="v-chip">'+esc(chip)+'</div>';
+      dataHtml = '<div class="v-chip">'+esc(chip)+'</div>' + (size ? '<div class="v-data">'+esc(size)+'</div>' : '');
     } else {
       // 更新于 = 内容自己的 mtime（MOC 取整棵子树最新那份）——只认内容，不掺本机阅读痕迹，两台设备一致
       let lastM = new Date(t.mtime||0).getTime();
       subs.forEach(function(x){ const mt = new Date(x.mtime||0).getTime(); if(mt>lastM) lastM = mt; });
-      dataHtml = lastM ? '<div class="v-data">更新于 '+esc(relTime(lastM))+'</div>' : '';
+      const bits = [];
+      if(lastM) bits.push('更新于 ' + relTime(lastM));
+      if(size) bits.push(size);
+      dataHtml = bits.length ? '<div class="v-data">'+esc(bits.join(' · '))+'</div>' : '';
     }
     return '<article class="ventry'+(fallow?' fallow':'')+'" data-target="'+t.id+'" style="--c:'+c+'">'
       + '<div class="v-top"><span class="v-tag">'+esc(t.catLabel)+'</span>'
