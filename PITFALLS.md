@@ -68,8 +68,8 @@
   gh api -X DELETE repos/Xytheria-t/Xytheria-t.github.io/keys/$KID; rm -f "$KEY" "$KEY.pub"
   ```
   用 `insteadOf` 重写而非新加 remote（否则 `refs/remotes/origin/master` 不更新）；Git Bash 下 `gh api` 端点省略前导斜杠。
-- **已固化，不再走上面的临时流程**：remote 已改 SSH（`git remote set-url origin git@github.com:Xytheria-t/Xytheria-t.github.io.git`），`~/.ssh/config` 写死绕行（`Host github.com` → `HostName ssh.github.com` / `Port 443` / `IdentityFile ~/.ssh/id_ed25519` / `IdentitiesOnly yes`），22 端口被拒的兜底进了配置，不必每次敲 `GIT_SSH_COMMAND`；仓库级写权限部署密钥长期保留（**不再「推完即删」**，删了下回还得重走）。想换成账户级 key：`gh ssh-key add` 需 `admin:public_key` scope（`gh auth refresh -s admin:public_key`，要浏览器设备码授权），且 Windows 下必须传 Windows 路径（`C:\Users\Xythe\.ssh\id_ed25519.pub`），传 `/c/Users/...` 报「系统找不到指定的路径」。**设备码这条路依赖 github.com 主站**（`login/device/code`），本机到主站不通时会 `dial tcp ...:443 connectex` 超时（api.github.com 通但不够用）→ 此时改网页手动加：复制 `~/.ssh/id_ed25519.pub` 内容粘进 https://github.com/settings/ssh/new ；加没加上用 `ssh -T git@github.com` 判（回 `Hi <用户名>!` = 账户级生效，回 `Hi <仓库>!` = 只匹配到部署密钥）。
-- **每次 push 弹 Credential Helper Selector** 的根因：`credential.helper` 为空（本机实测 `--get-all` 无输出），Git 没有唯一 helper 就弹窗问。改走 SSH 后彻底不触发；仍走 HTTPS 的话 `git config --global credential.helper manager` 也能摁掉，但 HTTPS 通道仍可能被阻断。
+- **每次 push 弹 Credential Helper Selector** 的根因是 system 级 `credential.helper=helper-selector`（Git for Windows 自带，`git config --system --list` 才看得到）。修法：`git config --system --unset-all credential.helper`（需管理员权限）。凭据本身不用管——`gh auth setup-git` 早已在 global 写好 `credential.https://github.com.helper = gh auth git-credential`。
+- **本机 HTTPS 推不动，只能走 SSH**（实测 `curl -m 15 https://github.com` 超时、`api.github.com` 返 200、`git push` 报 `Failed to connect to github.com:443`）。已固化为最简两件：`~/.ssh/config` 写 `Host github.com` → `HostName ssh.github.com` / `Port 443` / `IdentityFile ~/.ssh/id_ed25519` / `IdentitiesOnly yes`，remote 改 `git@github.com:Xytheria-t/Xytheria-t.github.io.git`，配一把仓库级写权限部署密钥（`gh api -X POST repos/.../keys -F read_only=false`）。之后 `git push` 直接用，不再需要 `GIT_SSH_COMMAND`。**删了这套就得重配**（账户级 key 走不通：`gh ssh-key add` 要 `admin:public_key` scope，而设备码授权依赖 github.com 主站，本机不通）。
 
 ## 导航 / 浏览器历史栈
 > 模型见「单一驱动源」那条。
