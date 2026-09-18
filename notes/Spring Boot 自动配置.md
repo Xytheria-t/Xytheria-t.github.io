@@ -15,42 +15,50 @@ category: spring
 调试与面试 | 条件报告 + 高频考点 | 复盘
 ```
 
-jar 里预埋一批 `@AutoConfiguration` 类，框架按 classpath 上有哪些类、容器里已有哪些 bean、外部属性写了什么，逐条判定要不要装配——你只写业务 bean，缺的、该有的，框架替你补上。
+自动配置把「用一个技术要配哪些 bean」从使用者挪到 jar 提供方：starter 里预置一批 `@AutoConfiguration` 类，启动时先全量列出候选，再按当前环境（classpath 有什么、容器里已有什么、配置写了什么）逐条裁定生效与否。用户 bean 先于它们进容器，于是默认实现照补、你声明过的直接顶掉——「约定大于配置」就是这样落地的。
 
 ## 入口：@SpringBootApplication 三合一
 
 `@SpringBootApplication` 是三个注解的复合 stereotype，真正点燃自动配置的是 `@EnableAutoConfiguration`：
 
-| 注解 | 职责 | 备注 |
+| 注解 | 职责 | 产出 |
 |---|---|---|
-| `@SpringBootConfiguration` | 标记这是配置源（本身是 `@Configuration`） | 让当前类被当作配置类 |
-| `@ComponentScan` | 扫当前包及子包，把 `@Component`/`@Service` 收进容器 | 用户 bean 由此注册 |
-| `@EnableAutoConfiguration` | 接入自动配置 | 内部 `@Import(AutoConfigurationImportSelector.class)` |
+| `@SpringBootConfiguration` | 标记配置源（本身是 `@Configuration`） | 当前类成为配置类 |
+| `@ComponentScan` | 从**启动类所在包**向下递归扫 `@Component` 派生注解 | 用户 bean 的 BeanDefinition |
+| `@EnableAutoConfiguration` | `@Import(AutoConfigurationImportSelector.class)` | 自动配置候选导入 |
+
+> [!note] @ComponentScan 的四条边界
+> - 起点 = 启动类所在包，`scanBasePackages` 可改。启动类放错包 → 子包 bean 全扫不进 → 启动报 `NoSuchBeanDefinition`。
+> - 扫的是 `@Component` 的派生：`@Service` / `@Repository` / `@Controller` / `@RestController` / `@Configuration`。
+> - 产出是 **BeanDefinition**（注册进 BeanFactory），不是实例；实例化留到 `finishBeanFactoryInitialization`。
+> - 只认**包前缀**、与在哪个 jar 无关：自动配置类的包名是 `org.springframework.boot.autoconfigure.*`，不在启动类包前缀下 → 扫不到，只能走 imports 文件加载。
+> - 扫描先于自动配置执行，这是 `@ConditionalOnMissingBean` 判得准的前提（见下下节）。
 
 只想要自动配置、不要组件扫描时，可单独写 `@EnableAutoConfiguration`；纯 Spring Framework 没它，得手写 `@Configuration`。
 
 ## 候选清单：从 spring.factories 到 AutoConfiguration.imports
 
-`AutoConfigurationImportSelector.getAutoConfigurationEntry()` 做的事：读每个 jar 下的 `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`（每行一个自动配置类全限定名，`#` 开头是注释），再去重、按 exclude 与条件过滤。
+清单文件在每个 jar 的 `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`，每行一个全限定类名，`#` 开头是注释；读取者是 `AutoConfigurationImportSelector.getAutoConfigurationEntry()`——它扫完所有 jar、过滤排序后交回一批类名。
 
 ```chain
-扫所有 jar 的 imports 文件 | 收集候选类名 | 收集
-去重 + 排除 spring.autoconfigure.exclude | 剪掉显式不要的 | 过滤
-过 @Conditional 筛选 | 环境不满足的淘汰 | 裁剪
-按 @AutoConfigureBefore/After 排序 | 决定装配先后 | 排序
-导入容器 | 成为普通 @Configuration | 落地
+扫全部 jar 的 imports 文件 | 逐行读类名 | 收集
+去重 + 剔除 spring.autoconfigure.exclude | 剪掉显式排除项 | 过滤
+跑 @Conditional 系列筛选 | 环境不满足的淘汰 | 裁剪
+按 @AutoConfigureBefore/After 排序 | 定装配先后 | 排序
+交给 @Import 导入 | 成为普通 @Configuration | 落地
 ```
 
-| 版本 | 自动配置清单位置 | 说明 |
+| 版本 | 清单位置 | 说明 |
 |---|---|---|
-| Boot < 2.7 | `META-INF/spring.factories` 的 `EnableAutoConfiguration` key | 逗号分隔的类名 |
-| Boot 2.7+ | `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports` | 每行一个类名，官方推荐 |
-| Boot 3.0 | `spring.factories` 自动配置支持**彻底删除** | 旧写法直接不生效 |
+| < 2.7 | `spring.factories` 的 `EnableAutoConfiguration` key | 逗号分隔类名 |
+| 2.7 ~ 2.x | imports 文件（推荐） | 旧格式仍兼容 |
+| 3.0+ | 只剩 imports 文件 | 旧 key 直接失效 |
 
-2.7 两格式并存过渡，3.0 只剩新格式：自己写 starter 若还留 `spring.factories` 的 `EnableAutoConfiguration` key，升级后自动配置整体失效。Boot 2.7+ 的自动配置类用 `@AutoConfiguration` 标注（meta 了 `@Configuration`，自带 `before`/`after` 排序属性），不必再写 `@AutoConfigureBefore/After`。
+- 2.7 两格式并存，3.0 只剩新格式：自写 starter 若还留旧 key，升级后整个自动配置**静默失效**，必须迁 imports。
+- 2.7+ 自动配置类用 `@AutoConfiguration` 标注（meta 了 `@Configuration`，自带 `before`/`after` 排序属性），不必再写 `@AutoConfigureBefore/After`。
 
-> [!tip] 自动配置类禁止被组件扫描
-> 它们必须只通过 imports 文件加载：放独立包、类上绝不挂 `@Component`，否则会被扫两遍，还破坏「用户配置先加载」的顺序前提。MyBatis 的 `MybatisAutoConfiguration` 正是这个套路——classpath 有 SqlSessionFactory 相关类才装配（详见 [[MyBatis]]）；事务的 `TransactionAutoConfiguration`、AOP 的 `AopAutoConfiguration`（详见 [[Spring AOP]]）同样如此。
+> [!warning] 自动配置类绝不能被组件扫描
+> 只经 imports 文件加载：放独立包、类上不挂 `@Component`。被扫进来会破坏「用户配置先加载」的顺序，`@ConditionalOnMissingBean` 随即失准。`MybatisAutoConfiguration`（详见 [[MyBatis]]）、`TransactionAutoConfiguration`、`AopAutoConfiguration`（详见 [[Spring AOP]]）都是这个套路。
 
 ## 条件生效：@Conditional 系列按环境裁剪
 
@@ -65,30 +73,39 @@ jar 里预埋一批 `@AutoConfiguration` 类，框架按 classpath 上有哪些�
 | `@ConditionalOnProperty` | 某属性等于/匹配某值 | `spring.jpa.show-sql=true` 才开 |
 | `@ConditionalOnWebApplication` | 是 Web 应用（`...NotWebApplication` 反之） | Web 环境才配 MVC |
 
-> [!danger] 用户 bean 为什么能覆盖自动配置
-> 自动配置里提供的 bean 几乎都标 `@ConditionalOnMissingBean`。用户 `@Configuration` 经 `@ComponentScan` 先于自动配置加载，条件判定时「已有该类型 bean」成立 → 自动配置那一份被跳过，于是用你写的。反过来想禁某自动配置，配 `spring.autoconfigure.exclude` 比手写空 bean 干净。
+> [!danger] 想改自动配置的行为：两条路
+> ① 自己写个同类型 bean 顶掉——自动配置的 bean 几乎都标 `@ConditionalOnMissingBean`，它在容器里已有该类型时直接跳过；② `spring.autoconfigure.exclude=...` 整个排除，比手写空 bean 干净。
 
 > [!warning] bean 条件只在自动配置类上可靠
-> `@ConditionalOnBean`/`@ConditionalOnMissingBean` 按「已处理到这一步的 bean 定义」判定。用户 `@Configuration` 保证先于自动配置，所以放在自动配置类/方法上才稳；若放到普通业务配置类上，加载顺序不定，结果不可靠。
+> `@ConditionalOnBean`/`@ConditionalOnMissingBean` 按「已处理到这一步的 bean 定义」判定。用户 `@Configuration` 保证先于自动配置，所以放在自动配置类/方法上才稳；放到普通业务配置类上，加载顺序不定，结果不可靠。
 
-自动配置之间的先后由 `@AutoConfigureBefore`/`@AutoConfigureAfter`/`@AutoConfigureOrder` 决定；用户 `@Configuration` 永远排在自动配置之前。
+先后还能用 `@AutoConfigureOrder` 微调；用户 `@Configuration` 永远排在自动配置之前。
 
 ## 配置绑定：@ConfigurationProperties 接外部属性
 
-光装配 bean 不够，还得把 `application.properties`/`yml` 里的值灌进去——这是 `@ConfigurationProperties` 的活。
+bean 装好了，值从哪来：`application.yml` 里同一前缀的属性被绑成类型安全对象，注入时按字段读。
 
 ```java
-@ConfigurationProperties(prefix = "myapp.datasource")   // prefix 锁定属性段
+@ConfigurationProperties(prefix = "myapp.datasource")  // 锁定属性段
 public class DataSourceProps {
-    private String url;            // myapp.datasource.url 绑定进来
-    private int maxPoolSize = 10;  // 默认值可先写好；getter/setter 必须存在
+    private String url;            // ← myapp.datasource.url
+    private int maxPoolSize = 10;  // 默认值；必须有 getter/setter
 }
 ```
 
-- 注册：类本身要成为 bean——兼 `@Component` 被扫到、`@EnableConfigurationProperties(DataSourceProps.class)` 引入，或 `@ConfigurationPropertiesScan` 扫包；绑定的活由 `ConfigurationPropertiesBindingPostProcessor` 干，它随 Boot 自动配置已注册好。
-- **宽松绑定（relaxed binding）**：`max-pool-size`、`maxPoolSize`、`max_pool_size`、`MYAPP_DATASOURCE_MAX_POOL_SIZE`（环境变量全大写）四种写法都映射到 `maxPoolSize`。
-- 执行绑定的是 `Binder`（Boot 2.0+），`@ConfigurationProperties` 只是声明，绑定发生在 bean 后处理阶段；`spring-boot-configuration-processor` 编译期生成 `spring-configuration-metadata.json` 给 IDE 补全。
-- 与 `@Value("${...}")` 的分工：`@Value` 适合零散取单个值、支持 SpEL；`@ConfigurationProperties` 把一整段属性绑成类型安全对象，支持宽松绑定、元数据和 `@Validated` 校验，自动配置全用它。
+- 成为 bean 三选一：`@Component` 被扫到 / `@EnableConfigurationProperties(DataSourceProps.class)` / `@ConfigurationPropertiesScan` 扫包。
+- 绑定由 `ConfigurationPropertiesBindingPostProcessor`（Boot 已注册）在初始化前从 `Environment` 取值反射写入；`@ConfigurationProperties` 本身只是声明，真正干活的 `Binder` 在 Boot 2.0+ 接手。
+- 宽松绑定（relaxed binding）：`maxPoolSize` ↔ `max-pool-size` ↔ `max_pool_size` ↔ 环境变量 `MYAPP_DATASOURCE_MAX_POOL_SIZE`。
+- IDE 补全靠 `spring-boot-configuration-processor` 编译期生成 `spring-configuration-metadata.json`。
+
+| | `@Value("${...}")` | `@ConfigurationProperties` |
+|---|---|---|
+| 粒度 | 零散取单个值 | 一整段属性绑成对象 |
+| 类型安全 | 弱（字符串转换） | 强 |
+| 宽松绑定 / 校验 | 不支持 | 支持，可叠 `@Validated` |
+| SpEL | 支持 | 不支持 |
+
+自动配置全用后者。
 
 ## 调试：为什么没生效 / 怎么看
 
@@ -99,22 +116,27 @@ public class DataSourceProps {
 - 排除：`@SpringBootApplication(exclude = XAutoConfiguration.class)` 写死，或 `spring.autoconfigure.exclude=com.example.XAutoConfiguration` 写活，二者等价。
 
 <details>
-<summary>面试问答 (2题)</summary>
+<summary>面试问答 (3题)</summary>
 
 Q：自动配置类是怎么被发现的？spring.factories 和 AutoConfiguration.imports 什么关系？
 
-A：容器启动期 AutoConfigurationImportSelector 扫每个 jar 的 META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports，逐行读出自动配置类名。Boot 2.7 之前用 META-INF/spring.factories 的 EnableAutoConfiguration key（逗号分隔）；2.7 引入新格式并存，3.0 删除旧格式。
+A：启动期 `AutoConfigurationImportSelector` 扫每个 jar 的 `META-INF/spring/...AutoConfiguration.imports`，逐行读出类名。2.7 之前用 `spring.factories` 的 `EnableAutoConfiguration` key（逗号分隔），2.7 起新格式并存，3.0 删掉旧格式。
+
+Q：为什么启动类要放在最外层包？
+
+A：`@ComponentScan` 以启动类所在包为根向下递归，放窄了就扫不到其他模块的 `@Service`/`@Controller`。真要跨包就显式写 `scanBasePackages`。
 
 Q：@ConditionalOnClass 的 value 写真实类，类不在 classpath 不会炸吗？
 
-A：不会。条件注解读取的是注解元数据、由 ASM 解析，value 只当字符串比对、不触发类加载，所以目标类不存在也不报 NoClassDefFoundError。但 @Bean 方法上用它时返回类型会被 JVM 先加载，类缺失照样炸——这种情况要单独抽个配置类隔离条件。
+A：不会。条件注解读的是注解元数据、由 ASM 解析，value 只当字符串比对、不触发类加载。但 `@Bean` 方法上用它时返回类型会被 JVM 先加载，类缺失照样炸——要单独抽配置类隔离条件。
 
 </details>
 
 <details>
-<summary>常见误区 (2条)</summary>
+<summary>常见误区 (3条)</summary>
 
-- 误区：@ConfigurationProperties 不用写 getter/setter。绑定靠属性访问器，缺 getter/setter 字段绑不进去（构造函数绑定 @ConstructorBinding 除外）。
-- 误区：升到 Boot 3.0 后 spring.factories 还能凑合用。3.0 已彻底删除 spring.factories 的自动配置支持，必须迁到 AutoConfiguration.imports，否则整个 starter 自动配置不生效。
+- 误区：@ConfigurationProperties 不用写 getter/setter。绑定靠属性访问器，缺了字段绑不进去（构造器绑定 `@ConstructorBinding` 除外）。
+- 误区：升到 Boot 3.0 后 spring.factories 还能凑合用。3.0 已彻底删除它的自动配置支持，必须迁到 imports 文件，否则整个 starter 静默不装配。
+- 误区：把自动配置类加 `@Component` 能让它更快生效。它会被组件扫描提前加载，跑到自动配置该有的顺序之前，`@ConditionalOnMissingBean` 判定随之失准。
 
 </details>

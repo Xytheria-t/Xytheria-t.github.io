@@ -201,6 +201,8 @@ featured: ThreadPoolExecutor   # 核心子笔记的 title 或别名，build 自�
 8. **结构化优先、少散文**：能用表格、callout、mermaid 说清的不写段落；链表/树/哈希表这类结构优先画出来，而非文字描述。
 9. **H2 描述性具体术语**，禁编号（`## 1. xxx`）与泛化占位（详节/总结/详解）；深入/落地节按内容落点命名。
 10. **`<details>` 内不放代码块**（` ```mermaid ` / ` ```gantt ` 除外）：要展示代码就开正文节（如 `## 落地：Spring 写法`），别塞进折叠块。机械断言在 `vinea_check.mjs`（P1）。
+11. **一节三层封顶、主干唯一**：机制流程/步骤序列的主干只能有一处（chain 或表二选一），散文段只写前提、后果与陷阱。判据——删掉散文段后 chain/表是否仍完整，完整就删散文；「叙述段 + chain 同讲一个序列」违反即返工。
+12. **职责三要素**：组件/注解/API 的职责要写全「范围 → 产物 → 边界」。只写动作句（如「扫包把 X 收进容器」）判为不完整，补三要素后就近加 callout 兜易漏项（起点、产物形态、与邻组件的边界）。详见项目 AGENTS.md「文风与精简」节。
 
 **子类主题色**（与 `build.mjs` 的 `ACCENT` 对应，改色去那改，这里只读）：java-collection 青绿 / javase 翠绿 / jvm 珊瑚红 / juc 亮紫 / spring 亮青 / architecture·system-design 亮橙 / network 天蓝 / mysql 亮蓝 / redis 鲜红 / mq 品红 / leetcode 金黄 / projects 玫红
 
