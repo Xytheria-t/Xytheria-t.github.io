@@ -68,7 +68,7 @@
   gh api -X DELETE repos/Xytheria-t/Xytheria-t.github.io/keys/$KID; rm -f "$KEY" "$KEY.pub"
   ```
   用 `insteadOf` 重写而非新加 remote（否则 `refs/remotes/origin/master` 不更新）；Git Bash 下 `gh api` 端点省略前导斜杠。
-- **已固化，不再走上面的临时流程**：remote 已改 SSH（`git remote set-url origin git@github.com:Xytheria-t/Xytheria-t.github.io.git`），`~/.ssh/config` 写死绕行（`Host github.com` → `HostName ssh.github.com` / `Port 443` / `IdentityFile ~/.ssh/id_ed25519` / `IdentitiesOnly yes`），22 端口被拒的兜底进了配置，不必每次敲 `GIT_SSH_COMMAND`；仓库级写权限部署密钥长期保留（**不再「推完即删」**，删了下回还得重走）。想换成账户级 key：`gh ssh-key add` 需 `admin:public_key` scope（`gh auth refresh -s admin:public_key`，要浏览器设备码授权），且 Windows 下必须传 Windows 路径（`C:\Users\Xythe\.ssh\id_ed25519.pub`），传 `/c/Users/...` 报「系统找不到指定的路径」。
+- **已固化，不再走上面的临时流程**：remote 已改 SSH（`git remote set-url origin git@github.com:Xytheria-t/Xytheria-t.github.io.git`），`~/.ssh/config` 写死绕行（`Host github.com` → `HostName ssh.github.com` / `Port 443` / `IdentityFile ~/.ssh/id_ed25519` / `IdentitiesOnly yes`），22 端口被拒的兜底进了配置，不必每次敲 `GIT_SSH_COMMAND`；仓库级写权限部署密钥长期保留（**不再「推完即删」**，删了下回还得重走）。想换成账户级 key：`gh ssh-key add` 需 `admin:public_key` scope（`gh auth refresh -s admin:public_key`，要浏览器设备码授权），且 Windows 下必须传 Windows 路径（`C:\Users\Xythe\.ssh\id_ed25519.pub`），传 `/c/Users/...` 报「系统找不到指定的路径」。**设备码这条路依赖 github.com 主站**（`login/device/code`），本机到主站不通时会 `dial tcp ...:443 connectex` 超时（api.github.com 通但不够用）→ 此时改网页手动加：复制 `~/.ssh/id_ed25519.pub` 内容粘进 https://github.com/settings/ssh/new ；加没加上用 `ssh -T git@github.com` 判（回 `Hi <用户名>!` = 账户级生效，回 `Hi <仓库>!` = 只匹配到部署密钥）。
 - **每次 push 弹 Credential Helper Selector** 的根因：`credential.helper` 为空（本机实测 `--get-all` 无输出），Git 没有唯一 helper 就弹窗问。改走 SSH 后彻底不触发；仍走 HTTPS 的话 `git config --global credential.helper manager` 也能摁掉，但 HTTPS 通道仍可能被阻断。
 
 ## 导航 / 浏览器历史栈
