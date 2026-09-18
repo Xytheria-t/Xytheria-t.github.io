@@ -1,7 +1,7 @@
 ---
 title: AI Agent Skill
 category: ai-tools
-order: 1
+order: 2
 ---
 
 # AI Agent Skill

@@ -1,7 +1,7 @@
 ---
 title: MCP
 category: ai-tools
-order: 2
+order: 3
 aliases: [模型上下文协议]
 ---
 
@@ -27,7 +27,7 @@ aliases: [模型上下文协议]
 版本线：2024-11 Anthropic 开源首版（规范 2024-11-05）→ 2025-03 Streamable HTTP 取代 HTTP+SSE → 2026-07-28 第五版核心无状态化（本篇基准版本）。
 
 > [!note] 边界澄清
-> skill 管「能力怎么打包」（见 [[AI Agent Skill]]），MCP 管「能力怎么接进来」；skill 可驱动宿主去调 MCP server。
+> skill 管「能力怎么打包」（见 [[AI Agent Skill]]），MCP 管「能力怎么接进来」；skill 可驱动宿主去调 MCP server。三者的位置：[[AI Agent]] 是那个循环调用工具的主体。
 
 ## 三个角色
 

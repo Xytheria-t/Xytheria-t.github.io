@@ -68,6 +68,7 @@ function wallHTML(n){
     'juc': {
       groups: [
         { name:'概念基础', ids:['进程与线程','jmm','虚拟线程'] },
+        { name:'线程封闭', ids:['threadlocal'] },
         { name:'线程管理', ids:['线程池'] },
         { name:'同步原语', ids:['java-锁'] },
         { name:'并发容器', ids:['concurrenthashmap'] },
@@ -76,6 +77,7 @@ function wallHTML(n){
         '进程与线程':'进程 vs 线程 · 调度单位',
         'jmm':'内存模型 · 可见性判据',
         '虚拟线程':'轻量协程 · JDK 21',
+        'threadlocal':'线程封闭 · 副本隔离',
         '线程池':'池化复用 · 七大参数',
         'java-锁':'锁体系 · 横评总览',
         'concurrenthashmap':'桶级锁 · 高并发 Map',
@@ -83,10 +85,12 @@ function wallHTML(n){
     },
     'ai-工具': {
       groups: [
+        { name:'智能体本体', ids:['ai-agent'] },
         { name:'能力扩展', ids:['ai-agent-skill','mcp'] },
         { name:'知识增强', ids:['rag'] },
       ],
       traits: {
+        'ai-agent':'循环决策 · 工具闭环',
         'ai-agent-skill':'渐进式披露 · 按需加载',
         'mcp':'工具接入协议 · 无状态核心',
         'rag':'检索增强 · 分块与重排',

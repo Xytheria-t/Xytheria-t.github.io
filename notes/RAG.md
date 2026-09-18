@@ -1,7 +1,7 @@
 ---
 title: RAG
 category: ai-tools
-order: 3
+order: 4
 aliases: [检索增强生成]
 ---
 
