@@ -10,14 +10,6 @@ excerpt: EasyOrange 的统一缓存底座与三模式落地：单层 Redis + fai
 EasyOrange 缓存一致性是 EasyOrange 项目里「Redis 缓存与数据库如何同步」的落地方案：以单层 Redis + fail-open 为统一底座，按业务对一致性的要求分别落地 Cache-Aside 写失效与 Write-Behind，余下窗口交给 TTL 兜底。
 :::
 
-## 思维链路速查
-
-```chain
-全局底座 | 单层 Redis + fail-open | 框架
-三模式落地 | Cache-Aside / Write-Behind / 取舍 | 核心
-兜底与边界 | TTL · 分布式锁 · 正交项 | 收尾
-```
-
 一致性靠「分层取舍」收敛，不靠消灭窗口：先立单层 Redis + fail-open 的全局底座，再按一致性要求把业务拆进三种模式，余下的边界风险交给 TTL 与分布式锁。
 
 > [!important] 简历口径

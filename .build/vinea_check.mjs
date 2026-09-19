@@ -73,9 +73,10 @@ for (const [f, v] of meta) {
     if (cols.some(c => c !== 3)) iss.push('chain非三栏(' + cols.join('/') + ')');
   }
 
-  // 顶部结构：chain/branch 优先；微型·线性笔记允许纯文本导语代替，但导语句必须在
-  const head = body.slice(0, topIdx > -1 ? topIdx : body.length)
-    .replace(/^#[^\n]*\n/, '')
+  // 顶部结构：有「思维链路速查」段 → 段内必须是 chain/branch；无该段 → lede 之后必须有导语句（chain 按需，导语永远在）
+  const afterLede = body.replace(/^#[^\n]*\r?\n/, '').replace(/:::lede[\s\S]*?:::/, '');
+  const firstH2 = afterLede.search(/^##[ \t]/m);
+  const head = (firstH2 > -1 ? afterLede.slice(0, firstH2) : afterLede)
     .split('\n').filter(l => !/^\s*>[ \t]?/.test(l) && !/^\s*```/.test(l)).join('\n').trim();
   if (!/##[ \t]*思维链路速查/.test(body)) {
     if (head.length < 10) iss.push('既无[思维链路速查]也无导语');

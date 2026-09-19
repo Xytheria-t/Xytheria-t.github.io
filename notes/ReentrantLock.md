@@ -10,16 +10,6 @@ aliases: [显式锁, 可重入锁]
 ReentrantLock 是 JDK 提供的显式互斥锁，由 AQS 实现且可重入，加锁解锁都要自己写。它相对内置锁的增量在于可中断、可超时、可选公平与多条件队列，代价是锁的释放必须由调用方保证。
 :::
 
-## 思维链路速查
-
-```chain
-加解锁 | lock/unlock | 入口
-灵活能力 | 中断/超时/公平 | 核心
-Condition | 多等待队列 | 进阶
-底层 | AQS 实现 | 原理
-面试问答 | 高频考点 | 复盘
-```
-
 ReentrantLock 是 JDK 显式互斥锁 → 手动 lock/unlock(必须 finally) → 支持中断/超时/公平/多 Condition → 底层基于 [[AQS]] → 功能强于 [[synchronized]]。
 
 ## 基本用法
