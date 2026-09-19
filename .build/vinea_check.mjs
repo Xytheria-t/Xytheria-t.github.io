@@ -25,7 +25,7 @@ for (const f of files) {
   const fences = (raw.match(/^```/gm) || []).length;
   if (fences % 2 !== 0) problems.push(`[P0] ${f}: fence 数为奇数 (${fences})`);
   const aliases = (kv.aliases || '').replace(/[\[\]"']/g, '').split(',').map(s => s.trim()).filter(Boolean);
-  meta.set(f, { title, aliases, isMoc: /^moc$/i.test((kv.type || '').trim()), order: kv.order, cat: kv.category, raw });
+  meta.set(f, { title, aliases, isMoc: /^moc$/i.test((kv.type || '').trim()), clip: /^true$/i.test((kv.clip || '').trim()), order: kv.order, cat: kv.category, raw });
   notes[title] = f;
 }
 // slug 名册 = title slug ∪ alias slug（与 build 的双链解析同口径，避免 [[旧名]] 误报死链）
@@ -80,6 +80,14 @@ for (const [f, v] of meta) {
   if (!/##[ \t]*思维链路速查/.test(body)) {
     if (head.length < 10) iss.push('既无[思维链路速查]也无导语');
   } else if (!/```(chain|branch)/.test(topSeg)) iss.push('顶部非chain/branch');
+
+  // 开篇定义句：H1 与首个 H2 之间必须有「X 是什么」的本体段（MOC 走墙、题卡/速记另有形态，豁免）
+  if (!v.isMoc && !v.clip && v.cat !== 'leetcode') {
+    const defSeg = body.replace(/^\s*#[^\r\n]*\r?\n?/, '').split(/^##[ \t]/m)[0]
+      .replace(/```[\s\S]*?(```|$)/g, '')
+      .split('\n').filter(l => l.trim() && !/^\s*[>|<\-*\d]/.test(l)).join('').trim();
+    if (defSeg.length < 20) iss.push('缺开篇定义句(<20字)');
+  }
 
   const h2 = [...body.matchAll(/^##[ \t]+(.*)$/gm)].map(m => m[1]);
   const num = h2.filter(h => /^\d+[.、]/.test(h));

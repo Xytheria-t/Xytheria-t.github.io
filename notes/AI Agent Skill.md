@@ -6,6 +6,8 @@ order: 2
 
 # AI Agent Skill
 
+AI Agent Skill（智能体技能）是 agent 的能力扩展机制：把一项专业能力的说明书与配套资源打包成一个目录，核心是一份 SKILL.md，用到时才加载进上下文，解决「能力要多、常驻上下文要省」的矛盾。
+
 ## 思维链路速查
 
 ```chain
@@ -19,7 +21,7 @@ skill 是 [[AI 工具]] 卷里 agent 的能力扩展机制：把专业能力的�
 
 ## 技能是什么
 
-**Agent Skill（智能体技能）** 是一个目录，核心是一份 `SKILL.md`——frontmatter 写元数据、Markdown 正文写执行指令（runbook）。格式由 Anthropic 提出并作为开放标准发布（agentskills.io），Claude Code、Microsoft Agent Framework、Copilot Studio 按同一份格式实现。
+`SKILL.md` 由两部分组成：frontmatter 写元数据、Markdown 正文写执行指令（runbook）。格式由 Anthropic 提出并作为开放标准发布（agentskills.io），Claude Code、Microsoft Agent Framework、Copilot Studio 按同一份格式实现。
 
 | 维度 | skill | agent | 提示词 |
 |---|---|---|---|

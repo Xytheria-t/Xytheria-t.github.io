@@ -6,6 +6,8 @@ excerpt: MyBatis 的取舍是「半自动」：SQL 留在 XML 里由开发者手
 
 # MyBatis
 
+MyBatis 是一款半自动的 ORM 框架：SQL 由开发者手写并自行调优，框架只承担参数装配与结果映射；因此它不像全自动 ORM 那样把 SQL 生成权也拿走，控制权留在开发者手里。
+
 ## 思维链路速查
 
 ```chain
@@ -30,7 +32,7 @@ MyBatis 的取舍是「半自动」：SQL 由开发者手写在 XML 里，连接
 | 手动遍历 ResultSet 封装对象 | resultType / resultMap 自动映射 |
 | 缓存自己实现 | 内置两级缓存 |
 
-**ORM**（对象关系映射）指数据库表与 Java 对象互转。全自动 ORM（Hibernate）按注解生成 SQL——省心但 SQL 不可控；MyBatis 只把「参数装配 + 结果映射」自动化、SQL 自己写，所以叫**半自动**。互联网业务 SQL 复杂、依赖精细调优（配合 [[MySQL 索引]]），可控的 MyBatis 成为主流。
+**ORM**（对象关系映射）指数据库表与 Java 对象互转。全自动 ORM（Hibernate）按注解生成 SQL——省心但 SQL 不可控；互联网业务 SQL 复杂、依赖精细调优（配合 [[MySQL 索引]]），可控的 MyBatis 成为主流。
 
 ## 执行流程：一次查询穿到 JDBC
 

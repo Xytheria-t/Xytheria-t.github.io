@@ -6,6 +6,8 @@ aliases: [Java 锁比较, Java 同步原语对比]
 
 # Java 锁对比
 
+Java 锁对比是 JUC 同步原语的横向选型参考，把 synchronized、volatile、ReentrantLock、读写锁、StampedLock 与 CAS 原子类放在同一组维度下逐项比较。它回答的不是「某个锁怎么实现」，而是「某个场景该挑哪一个」。
+
 ## 思维链路速查
 
 ```chain

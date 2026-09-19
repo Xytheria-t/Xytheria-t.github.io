@@ -7,6 +7,8 @@ aliases: [检索增强生成]
 
 # RAG
 
+RAG（Retrieval-Augmented Generation，检索增强生成）是一种不改模型参数、在每次生成前先检索外部知识并注入上下文的生成方案，解决模型参数里没有或已过时的私有知识。
+
 ## 思维链路速查
 
 ```chain

@@ -6,6 +6,8 @@ aliases: [传输控制协议, Transmission Control Protocol]
 
 # TCP
 
+TCP（Transmission Control Protocol，传输控制协议）是位于传输层的面向连接的可靠字节流协议，在不可靠的 IP 网络之上提供不丢、不重、按序的端到端传输。
+
 ## 思维链路速查
 
 ```chain
@@ -30,7 +32,7 @@ aliases: [传输控制协议, Transmission Control Protocol]
 | 校验和 | 必选（覆盖伪首部） | IPv4 可选（可置 0 跳过，现代实现默认开启）；IPv6 强制 |
 | 适用场景 | 文件、网页、邮件 | 实时音视频、DNS、游戏 |
 
-TCP 在 IP 之上提供端到端的可靠字节流，同属 [[计算机网络]] 传输层，[[UDP]] 走另一条路线。
+两者同属 [[计算机网络]] 传输层，[[UDP]] 走另一条路线。
 
 ## 三次握手
 

@@ -6,6 +6,8 @@ aliases: [HTTP over TLS, 超文本传输安全协议]
 
 # HTTPS
 
+HTTPS（HTTP over TLS，超文本传输安全协议）是在明文 HTTP 之下加一层 TLS 的传输方案，位于应用层与传输层之间，解决传输途中的窃听、篡改与冒充三类威胁。
+
 ## 思维链路速查
 
 ```chain

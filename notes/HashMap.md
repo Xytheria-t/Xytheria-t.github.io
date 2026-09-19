@@ -6,6 +6,8 @@ order: 2
 
 # HashMap
 
+HashMap 是 Java 基于哈希表实现的键值映射容器，靠 `hashCode` 定位桶、`equals` 判等，允许一个 null 键。它与 [[ConcurrentHashMap]] 的分界是线程安全，与 `TreeMap` 的分界是顺序不由比较器决定。
+
 ## 思维链路速查
 
 ```chain

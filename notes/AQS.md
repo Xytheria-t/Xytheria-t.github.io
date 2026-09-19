@@ -6,6 +6,8 @@ aliases: [AbstractQueuedSynchronizer, AQS 框架]
 
 # AQS
 
+AQS（AbstractQueuedSynchronizer，抽象队列同步器）是 JUC 中同步器共用的骨架基类，把「抢不到就排队阻塞、释放时唤醒后继」这套通用逻辑抽成模板方法供子类继承。它本身不是锁，state 代表什么（重入数、许可数还是计数）由子类定义。
+
 ## 思维链路速查
 
 ```chain

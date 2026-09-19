@@ -6,6 +6,8 @@ excerpt: 改一行不必整页落盘：undo log 记「怎么撤销」扛回滚�
 
 # MySQL 日志
 
+MySQL 日志指 InnoDB 与 Server 层为「改动可回滚、崩溃可恢复、主从可复制」而顺序写下的几份日志（undo log、redo log、binlog），是 WAL 思路在 MySQL 里的落地；它们不存业务数据，只记录改动的过程与结果。
+
 ## 思维链路速查
 
 ```chain

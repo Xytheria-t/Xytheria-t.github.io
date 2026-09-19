@@ -6,6 +6,8 @@ aliases: [Double-Checked Locking, DCL 单例, 双重检查单例]
 
 # DCL
 
+DCL（Double-Checked Locking，双重检查锁定）是单例懒加载的一种加锁模式：在保证只创建一个实例的前提下，让初始化完成后的读取路径完全不加锁。它是 volatile 语义的经典用例，也是「半初始化对象被发布」这一问题的标准现场。
+
 ## 思维链路速查
 
 ```chain

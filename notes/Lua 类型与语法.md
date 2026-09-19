@@ -5,6 +5,8 @@ category: redis
 
 # Lua 类型与语法
 
+Lua 是一种解释型、动态类型的脚本语言：变量本身没有类型而值才有类型，数字只有 number 一种、容器只有 table 一种（数组与哈希二合一），真值规则里只有 nil 与 false 为假。
+
 ## 思维链路速查
 
 ```chain

@@ -6,6 +6,8 @@ aliases: [用户数据报协议, User Datagram Protocol]
 
 # UDP
 
+UDP（User Datagram Protocol，用户数据报协议）是位于传输层的无连接数据报协议，在 IP 之上只提供多路复用与差错检测，解决低延迟、可容忍丢包的传输需求，可靠与拥塞控制交给应用层。
+
 ## 思维链路速查
 
 ```chain
