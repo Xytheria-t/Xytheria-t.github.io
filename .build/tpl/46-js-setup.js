@@ -14,27 +14,43 @@ function parsePathPoints(d){
   });
   return pts;
 }
+/* 按钮/渐隐挂 .chain-wrap（不滚动），状态 class 也打在 wrap 上：
+   .chain 是滚动容器，absolute 子元素会随内容滚走，滚到一端后反向按钮就不在屏幕上了 */
 function setupChainScroll(){
-  stage.querySelectorAll('.chain').forEach(function(chain){
-    if(chain.dataset.scrollSet) return;
-    chain.dataset.scrollSet='1';
-    const fl=document.createElement('span'); fl.className='chain-fade l';
-    const fr=document.createElement('span'); fr.className='chain-fade r';
-    chain.append(fl,fr);
+  stage.querySelectorAll('.chain-wrap').forEach(function(wrap){
+    if(wrap.dataset.scrollSet) return;
+    wrap.dataset.scrollSet='1';
+    const chain = wrap.querySelector('.chain');
+    if(!chain) return;
+    function mkBtn(dir){
+      const b=document.createElement('button');
+      b.type='button'; b.className='chain-nav '+dir;
+      b.setAttribute('aria-label', dir==='l' ? '向左滚动' : '向右滚动');
+      b.innerHTML='<svg viewBox="0 0 12 12" aria-hidden="true"><polyline points="'
+        + (dir==='l' ? '7.5,2 3.5,6 7.5,10' : '4.5,2 8.5,6 4.5,10')
+        + '" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      return b;
+    }
+    const bl=mkBtn('l'), br=mkBtn('r');
+    wrap.append(bl,br);
+    /* 一次只滚约 30% 可视宽（≈一个节点），别一步到头 */
+    const step = function(){ return Math.max(110, Math.round(chain.clientWidth * 0.3)); };
+    bl.addEventListener('click', function(){ chain.scrollBy({left:-step(), behavior: RM?'auto':'smooth'}); });
+    br.addEventListener('click', function(){ chain.scrollBy({left: step(), behavior: RM?'auto':'smooth'}); });
     /* overflow 是布局属性：只在初始化/resize 时算一次并缓存，
        绝不在 scroll 事件里重算，否则平滑滚动到末端瞬间测量抖动会让 has-scroll 翻转、箭头整体消失 */
     let overflow=false;
     function measure(){
       const sw=Math.ceil(chain.scrollWidth), cw=Math.ceil(chain.clientWidth);
       overflow = sw > cw + 1;
-      chain.classList.toggle('has-scroll', overflow);
+      wrap.classList.toggle('has-scroll', overflow);
       update();
     }
     function update(){
       if(!overflow) return;
       const sl=Math.round(chain.scrollLeft), cw=Math.round(chain.clientWidth), sw=Math.round(chain.scrollWidth);
-      chain.classList.toggle('at-start', sl <= 2);
-      chain.classList.toggle('at-end', sl + cw >= sw - 2);
+      wrap.classList.toggle('at-start', sl <= 2);
+      wrap.classList.toggle('at-end', sl + cw >= sw - 2);
     }
     measure();
     chain.addEventListener('scroll', update, {passive:true});

@@ -352,7 +352,9 @@ function renderChain(src) {
   }
   const chainCls = ['chain'];
   if (!hasCaption && !hasTrigger) chainCls.push('chain-simple');
-  return `<div class="${chainCls.join(' ')}"><div class="chain-row">${parts.join('')}</div></div>`;
+  /* .chain 是 overflow-x:auto 的滚动容器，绝对定位的子元素会随内容滚出视野；
+     滚动按钮/渐隐必须挂在外层 .chain-wrap（不滚动）上，否则滚到一端后反向按钮不在屏幕上 */
+  return `<div class="chain-wrap"><div class="${chainCls.join(' ')}"><div class="chain-row">${parts.join('')}</div></div></div>`;
 }
 
 function renderBranch(src) {

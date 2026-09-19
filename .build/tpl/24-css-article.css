@@ -237,7 +237,9 @@
 .art details.think-fold>summary h2{margin:0;padding-left:0;position:static;display:flex;align-items:center;gap:10px;font-family:var(--serif);font-size:18px;font-weight:600;color:var(--ink);letter-spacing:.02em}
 .art details.think-fold>summary h2 .rt-cap{float:none;margin:0;flex:none}
 .art details.think-fold>summary h2::before,.art details.think-fold>summary h2::after{display:none}
-.art details.think-fold .chain{max-width:100%;margin:1.1rem 0;padding:0 10px 6px;background:transparent;border:none;border-radius:0;box-shadow:none;overflow-x:auto;scrollbar-width:thin}
+.art details.think-fold .chain-wrap{margin:1.1rem 0}
+.art details.think-fold .chain-wrap::before,.art details.think-fold .chain-wrap::after{border-radius:0;background:none}
+.art details.think-fold .chain{max-width:100%;margin:0;padding:0 10px 6px;background:transparent;border:none;border-radius:0;box-shadow:none;overflow-x:auto;scrollbar-width:thin}
 .art details.think-fold .branch{max-width:100%;margin:1.1rem 0;padding:0 10px 6px;background:transparent;border:none;border-radius:0;box-shadow:none;overflow:hidden}
 .art details.think-fold .chain .chain-step{min-width:62px;padding:0 6px}
 .art details.think-fold .chain .chain-link{min-width:36px}
@@ -339,7 +341,8 @@ details[open] .mermaid .section{animation:nodeRise .5s var(--ease) both}
 .gantt-stage .gantt-track{background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 4%,#fff),color-mix(in srgb,var(--accent) 10%,#fff))}
 .gantt-stage .gantt-axis{border-bottom-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
 /* chain / 思维链路 (custom infographic) */
-.chain{margin:2.2rem 0;padding:26px 24px 28px;position:relative;overflow-x:auto;
+.chain-wrap{position:relative;margin:2.2rem 0}
+.chain{margin:0;padding:26px 24px 28px;overflow-x:auto;
   background:linear-gradient(180deg, color-mix(in srgb,var(--accent) 5%,#fff) 0%, color-mix(in srgb,var(--accent) 2%,#FFFDF8) 100%);
   border:1px solid color-mix(in srgb,var(--accent) 34%,var(--line));
   border-radius:18px;box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 18px 44px -30px rgba(40,30,20,.4)}
@@ -361,11 +364,29 @@ details[open] .mermaid .section{animation:nodeRise .5s var(--ease) both}
 .chain-link:hover .chain-line{background:linear-gradient(90deg, transparent, var(--accent-ink) 14%, var(--accent-ink) 86%, transparent)}
 .chain-link:hover .chain-arr{color:var(--accent-ink);transform:translateX(2px)}
 .chain-link:hover{color:var(--accent-ink)}
-.chain-fade{position:absolute;top:0;bottom:0;width:28px;pointer-events:none;opacity:0;transition:opacity .25s var(--ease);z-index:4}
-.chain-fade.l{left:0;background:linear-gradient(90deg,#fff,transparent)}
-.chain-fade.r{right:0;background:linear-gradient(270deg,#fff,transparent)}
-.chain.has-scroll:not(.at-start) .chain-fade.l{opacity:1}
-.chain.has-scroll:not(.at-end) .chain-fade.r{opacity:1}
+/* 边缘渐隐：只表示「还有内容」，纯装饰不可点 —— 挂在不滚动的 wrap 上 */
+.chain-wrap::before,.chain-wrap::after{content:"";position:absolute;top:1px;bottom:1px;width:52px;pointer-events:none;opacity:0;transition:opacity .28s var(--ease);z-index:3}
+.chain-wrap::before{left:1px;border-radius:18px 0 0 18px;background:linear-gradient(90deg,#FFFDF8 26%,rgba(255,253,248,0))}
+.chain-wrap::after{right:1px;border-radius:0 18px 18px 0;background:linear-gradient(270deg,#FFFDF8 26%,rgba(255,253,248,0))}
+.chain-wrap.has-scroll:not(.at-start)::before{opacity:.92}
+.chain-wrap.has-scroll:not(.at-end)::after{opacity:.92}
+/* 滚动按钮：圆形白底卡片，内缩 12px 不贴边，每次只滚约一个节点 */
+.chain-nav{position:absolute;top:50%;width:30px;height:30px;display:grid;place-items:center;padding:0;border-radius:50%;
+  border:1px solid color-mix(in srgb,var(--accent) 42%,var(--line));background:#fff;color:var(--accent-ink);
+  box-shadow:0 5px 16px -9px rgba(40,30,20,.55);cursor:pointer;-webkit-tap-highlight-color:transparent;
+  opacity:0;pointer-events:none;z-index:4;
+  /* 隐藏/显示只切 opacity：显示态选择器特异性(0,5,0)高于 :hover(0,2,0)，
+     若把 transform 写进显示态，hover 的放大就会被压掉 */
+  transform:translateY(-50%);transition:opacity .22s var(--ease),transform .22s var(--ease),border-color .22s var(--ease),box-shadow .22s var(--ease)}
+.chain-nav.l{left:12px}
+.chain-nav.r{right:12px}
+.chain-wrap.has-scroll:not(.at-start) .chain-nav.l{opacity:1;pointer-events:auto}
+.chain-wrap.has-scroll:not(.at-end) .chain-nav.r{opacity:1;pointer-events:auto}
+.chain-nav:hover{border-color:var(--accent-ink);box-shadow:0 7px 20px -9px rgba(40,30,20,.7);transform:translateY(-50%) scale(1.09)}
+.chain-nav:active{transform:translateY(-50%) scale(.97)}
+.chain-nav:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
+.chain-nav svg{width:13px;height:13px;display:block}
+@media (prefers-reduced-motion:reduce){ .chain-wrap::before,.chain-wrap::after,.chain-nav{transition:none} }
 /* branch / 思维链路 (branching hub) */
 .branch{margin:2.2rem 0;padding:26px 26px 28px;position:relative;overflow:hidden;
   background:linear-gradient(180deg, color-mix(in srgb,var(--accent) 5%,#fff) 0%, color-mix(in srgb,var(--accent) 2%,#FFFDF8) 100%);
