@@ -1,7 +1,7 @@
 ---
 title: Spring AOP
 category: spring
-excerpt: AOP 把日志、事务这类横切逻辑写进切面，由容器运行期织回代理对象——切点决定拦谁，通知决定拦住后做什么，而增强全挂在代理上，绕过代理就全部失效。
+excerpt: AOP 把日志、事务这类横切逻辑写进切面，由容器运行期织回代理——切点从连接点里挑要拦的时机，通知决定拦住后做什么，增强全挂在代理上，绕过代理即失效。
 ---
 
 # Spring AOP
@@ -10,42 +10,66 @@ excerpt: AOP 把日志、事务这类横切逻辑写进切面，由容器运行�
 
 ```chain
 动机与五术语 | 横切逻辑抽走、由代理织回 | 入口
-五种通知与顺序 | Around 独控全程，其余只能观察 | API
-切点表达式 | execution 六段式 + 指示器组合 | 语法
-织入原理 | 动态代理的应用层封装 | 核心
-失效边界 | 没走代理就没增强 + 面试 | 陷阱
+连接点 JoinPoint | 候选时机 vs 运行期快照 | 概念
+五种通知与顺序 | Around 独控全程，其余只观察 | API
+切点表达式 | execution 六段式 + 指示器 | 语法
+织入与失效边界 | 增强全挂在代理上 | 核心
 ```
 
-全篇主心骨只有一个：**增强全挂在代理对象上**——切点决定拦谁，通知决定拦住后干什么，而任何没经过代理的调用都拿不到增强。
+全篇主心骨只有一句：**增强全挂在代理对象上**——切点从「连接点」里挑出要拦的时机，通知决定拦住后干什么。连接点最易含糊，先把它掰成两层讲清。
 
 ## 动机：横切关注点
 
 **横切关注点**（cross-cutting concern）指事务、日志、权限、限流这类逻辑——不属于任何单一业务方法，却以相同形态散布在大量业务方法里。
 
 ```java
-public void transfer(TransferDto dto) {          // 抽离前：业务方法背一份事务模板
-    try { begin(); doTransfer(dto); commit(); }  // 真正的业务只有 doTransfer 一行
-    catch (Exception e) { rollback(); throw e; }
+// 抽离前：业务方法背一份事务模板，真正的业务只有 doTransfer 一行
+public void transfer(TransferDto dto) {
+    try { begin(); doTransfer(dto); commit(); } catch (Exception e) { rollback(); throw e; }
 }
 public void transfer(TransferDto dto) { doTransfer(dto); }   // 抽离后：事务由切面织回
 ```
 
-抽离后 `transfer` 看似丢了事务，但调用方拿到的其实是**代理对象**，事务逻辑在代理层被织回：
-
-- 手写 [[静态代理]] 也能织回，代价是一套增强 × N 个目标类要手写 N 个代理类。
-- 运行期自动生成代理（机制见 [[动态代理]]），才能切面一次声明、处处生效。
+抽离后 `transfer` 看似丢了事务，但调用方拿到的是**代理对象**，事务在代理层织回：手写 [[静态代理]] 要为每个目标类配一个代理类；运行期自动生成（见 [[动态代理]]），才做到一次声明、处处生效。
 
 ## 概念五术语
 
 | 术语 | 定义 | 日志切面里对应 |
 |---|---|---|
-| JoinPoint 连接点 | 程序执行中**可被拦截的时机**；Spring AOP 只支持「方法调用」 | 每次 service 方法调用 |
-| Pointcut 切点 | 表达式**筛出一组 JoinPoint**，回答「拦哪些」 | `execution(* com.demo.service..*.*(..))` |
-| Advice 通知 | 拦截后执行的**横切逻辑本身**，回答「拦住后做什么」 | 记录入参、耗时 |
+| JoinPoint 连接点 | 程序执行中**可被拦截的时机**（候选池，与有没有切面无关） | 一次 service 方法执行 |
+| Pointcut 切点 | 表达式**从候选池筛出子集**，回答「拦哪些」 | `execution(* com.demo.service..*.*(..))` |
+| Advice 通知 | 命中后执行的**横切逻辑本身** | 记录入参、耗时 |
 | Aspect 切面 | Pointcut + Advice 的**组装单位** | `@Aspect` 类 |
-| Weaving 织入 | 把切面**套到目标上生成代理**的过程 | 容器启动时生成代理 bean |
+| Weaving 织入 | 把切面**套到目标上生成代理** | 容器启动时生成代理 bean |
 
-只能拦方法调用：代理类只能重写方法（见 [[动态代理]]），字段读写、构造器、`static` 方法都拦不住——那些是 AspectJ（编译期改字节码）的能力。
+## 连接点：JoinPoint 的两层身份
+
+同一个词指两个东西：概念上的「可拦截时机」，与运行期传给通知方法的「这次拦截现场」。
+
+| 层 | JoinPoint 是什么 | 由谁决定 |
+|---|---|---|
+| 概念层 | 可被拦截的时机全集——Spring 里 = 每个 bean 的 public 方法**执行** | 框架能力，与切面无关 |
+| 筛选 | Pointcut 从全集里挑子集，命中的才被织入 | 表达式 |
+| 运行期 | 每次命中现生成 `JoinPoint` 对象，装这次调用的现场，方法返回即失效 | 容器 |
+
+三者关系：JoinPoint 是**候选**，Pointcut 决定**选谁**，Advice 是**在选中的连接点上跑的动作**。
+
+`JoinPoint` 对象能拿到什么：
+
+| 方法 | 拿到什么 |
+|---|---|
+| `getSignature()` | 方法签名；强转 `MethodSignature` 拿 Method、参数类型、方法注解 |
+| `getArgs()` | 本次调用的实参数组 `Object[]` |
+| `getTarget()` | 被代理的**原始对象** |
+| `getThis()` | **代理对象**本身；this 与 target 之分野即自调用失效的缩影 |
+| `getKind()` | 连接点类型，Spring 下恒为 `method-execution` |
+
+`ProceedingJoinPoint extends JoinPoint`，只多 `proceed()` / `proceed(newArgs)`——**只有 @Around 能声明**，也是唯一能控制流程的入口。
+
+> [!warning] JoinPoint 必须占通知方法的第一个参数位
+> 任何通知方法都可把 `JoinPoint` 声明为第一个参数；非 @Around 用 `ProceedingJoinPoint` 启动即报 `...only supported for around advice`。
+
+- 概念层在 Spring 里只有**方法执行（method execution）**一种；字段 get/set、构造器、异常处理属 AspectJ 领地。
 
 ## 五种通知
 
@@ -53,31 +77,31 @@ public void transfer(TransferDto dto) { doTransfer(dto); }   // 抽离后：事�
 @Aspect
 @Component                                     // 切面自己仍须是 Spring bean
 public class LogAspect {
-    @Pointcut("execution(* com.demo.service..*.*(..))")    // 起名复用，其他通知按名引用
+    @Pointcut("execution(* com.demo.service..*.*(..))")    // 起名复用，通知按名引用
     public void logPointcut() {}
 
-    @Before("logPointcut()")      // 四种时机型通知同理，只是注解名与时机不同
-    public void before(JoinPoint jp) {}
+    @Before("logPointcut()")                   // 四种时机型通知同理，只差注解名与时机
+    public void before(JoinPoint jp) {}        // JoinPoint 必须第一参；jp.getArgs() 拿实参
 
-    @Around("logPointcut()")                  // 包裹全程，唯一能控制流程的
+    @Around("logPointcut()")                   // 包裹全程，唯一能控制流程的
     public Object around(ProceedingJoinPoint pjp) throws Throwable {
         long t = System.nanoTime();
-        try { return pjp.proceed(); }   // 放行进链下一环；不调它目标方法不执行
-        finally { System.out.println("cost " + (System.nanoTime() - t) + "ns"); }
-    }   // proceed(newArgs) 换入参、返回前可改写返回值
+        try { return pjp.proceed(); }          // 放行进链下一环
+        finally { System.out.println(pjp.getSignature().getName() + " cost " + (System.nanoTime() - t) + "ns"); }
+    }
 }
 ```
 
-| 通知 | 时机 | 能拿到 | 控制权 | 典型用途 |
-|---|---|---|---|---|
-| `@Around` | 包裹全程 | 全部（`ProceedingJoinPoint`） | 改入参、改返回值、吞/转异常、跳过执行 | 事务、耗时、缓存、限流 |
-| `@Before` | 目标前 | `JoinPoint` 入参、签名 | 无，只能观察 | 权限、参数校验 |
-| `@AfterReturning` | 正常返回后 | `returning = "ret"` 绑返回值 | 读返回值；改引用不生效 | 结果审计 |
-| `@AfterThrowing` | 抛异常后 | `throwing = "ex"` 绑异常 | 只观察，异常照常外抛 | 异常上报 |
-| `@After` | 出口（finally） | 入参、签名 | 无，正常/异常都必到 | 释放资源 |
+| 通知 | 时机 | 控制权 | 典型用途 |
+|---|---|---|---|
+| `@Around` | 包裹全程 | 改入参、改返回值、吞/转异常、跳过执行 | 事务、耗时、缓存、限流 |
+| `@Before` | 目标前 | 无，只能观察 | 权限、参数校验 |
+| `@AfterReturning` | 正常返回后 | `returning="ret"` 绑返回值，改引用无效 | 结果审计 |
+| `@AfterThrowing` | 抛异常后 | `throwing="ex"` 绑异常，异常照常外抛 | 异常上报 |
+| `@After` | 出口（finally） | 无，正常/异常都必到 | 释放资源 |
 
 > [!danger] 不调 proceed()，目标方法静默不跑，也不报错
-> 这是 `@Around` 最常见的翻车点；反过来，缓存命中时「不 proceed、直接 return 缓存值」正是它的正确用法——return 什么由业务定，铁律只有一条：想让目标执行就必须调 `proceed()`。
+> @Around 头号翻车点；反过来「命中缓存就不 proceed、直接 return 缓存值」正是正解——想让目标执行就必须 proceed()。
 
 ## 切点表达式
 
@@ -85,23 +109,24 @@ public class LogAspect {
 
 | 段 | 值 | 含义 |
 |---|---|---|
+| 修饰符 | 省略 | 省略 = 任意 |
 | 返回值 | `*` | 任意 |
-| 包 | `com.demo.service..` | 本包及所有子包（`..` 跨任意层级） |
+| 包 | `com.demo.service..` | 本包及子包（`..` 跨层级） |
 | 类 | `*` | 包下任意类 |
 | 方法名 | `find*` | `find` 开头（`*` 任意） |
 | 参数 | `..` | 任意个、任意类型 |
 
-修饰符段与异常段可省略。常用指示器只留高频五个：
+高频指示器：
 
 | 指示器 | 匹配什么 | 示例 |
 |---|---|---|
 | `execution` | 方法签名（主力） | 见上 |
 | `within` | 某类/某包内所有方法 | `within(com.demo.service..*)` |
-| `@annotation` | **方法上**带某注解 | `@annotation(org.springframework.transaction.annotation.Transactional)` |
-| `@within` | **类上**带某注解 | `@within(org.springframework.stereotype.Service)` |
+| `@annotation` | **方法上**带某注解 | `@annotation(Transactional)` |
+| `@within` | **类上**带某注解 | `@within(Service)` |
 | `bean` | bean 名（Spring 扩展） | `bean(*ServiceImpl)` |
 
-指示器可用 `&&`、`||`、`!` 组合。最实用的一招——注解值直接绑进通知参数：
+可用 `&&`、`||`、`!` 组合；最实用一招——注解实例绑进通知参数：
 
 ```java
 @Before("@annotation(log)")   // 方法上标了 @Log 才生效，注解实例整体绑进 log
@@ -110,76 +135,54 @@ public void before(JoinPoint jp, Log log) { /* 直接读 log.value() */ }
 
 ## 执行顺序
 
-同一 Aspect 内（Spring 5.2.7 / Boot 2.3 起固定序）：
+同一 Aspect 内六个位置（5.2.7 / Boot 2.3 起固定）：
 
-```chain
-@Around 前半 | proceed() 之前的代码 | 1
-@Before | 进场的最后关卡 | 2
-目标方法 | 真正的业务逻辑 | 3
-@AfterReturning | 拿到返回值（或 @AfterThrowing 拿到异常） | 4
-@After | finally 语义，兜底必到 | 5
-@Around 后半 | proceed() 之后的代码 | 6
-```
+| 序 | 1 | 2 | 3 | 4 | 5 | 6 |
+|---|---|---|---|---|---|---|
+| 位置 | `@Around` 前半 | `@Before` | 目标方法 | `@AfterReturning` / `@AfterThrowing` | `@After` | `@Around` 后半 |
 
-异常路径把第 3 步换成「抛出」：`@AfterThrowing` → `@After` → 异常继续向外抛（`@Around` 不 catch 就跟着外抛）。
+- 异常路径：第 3 步抛出 → `@AfterThrowing` → `@After`，异常继续外抛。
+- 跨切面先后由 `@Order` 定：值小的切面在外层，先进后出。
+- 报顺序先报版本：此前相对顺序依赖 `getDeclaredMethods()` 返回序。
 
-> [!danger] 报顺序先报版本
-> 5.2.7 起（Boot 2.3+）才保证 `@AfterReturning`/`@AfterThrowing` 先于 `@After`（官方 #25186）；此前同切面 after 类通知的相对顺序依赖 `getDeclaredMethods()` 返回序，Java 7 起无保证。
+## 织入与失效边界
 
-跨切面的先后由 `@Order` 控制：**值小的切面优先级高，包在外层**——先进后出：
+织入 = 框架化地调 `Proxy.newProxyInstance` / `Enhancer.create`：通知方法是 handler 里的一段增强，`proceed()` 即 `method.invoke(target, args)`（JDK）/ `proxy.invokeSuper(obj, args)`（CGLIB）——机制见 [[动态代理]]。
 
-```chain
-@Order(1) 切面 | 先进入、后退出 | 外层
-@Order(2) 切面 | 后进入、先退出，贴近目标 | 内层
-```
-
-## 织入原理：动态代理的应用层封装
-
-代理选型那边已有结论，这里只对位概念：
-
-| AOP 概念 | 落到动态代理上是 |
-|---|---|
-| 通知方法 | handler / `MethodInterceptor` 里的一段增强逻辑 |
-| 拦截器链 | handler 内按序执行的增强序列 |
-| `@Around` 的 `proceed()` | `method.invoke(target, args)`（JDK）/ `proxy.invokeSuper(obj, args)`（CGLIB） |
-| 织入 | `Proxy.newProxyInstance` / `Enhancer.create` 的框架化调用 |
-
-代理选型速记：纯 Spring Framework 有接口默认 JDK Proxy，无接口退 CGLIB；**Boot 2.0+ 默认 `proxyTargetClass=true`，一律 CGLIB**。调用代理方法 = 依次过拦截器链，`proceed()` 即「调用下一环」。
-
-## 失效边界
-
-根因只有一句：**增强全挂在代理对象上，没走代理就没增强**。
+- 选型：纯 Framework 有接口默认 JDK Proxy、无接口退 CGLIB；**Boot 2.0+ 一律 CGLIB**。
+- 失效根因还是那句：**增强全挂在代理对象上，没走代理就没增强**。
 
 | 场景 | 为什么失效 |
 |---|---|
 | 同类自调用 `this.methodB()` | `this` 是原始对象，不是代理；拦截器链根本没被触发 |
-| `private` / `final` / `static` 方法 | 代理的字节码覆盖不了它们（详见 [[动态代理]]） |
+| `private` / `final` / `static` 方法 | 代理的字节码覆盖不了它们 |
 | `new` 出来的对象 | 不归容器管，压根没有代理 |
 | 目标类为 `final` | CGLIB 生成不了子类，代理都建不出来 |
 
-修法（都是针对自调用）：拆到另一个类、注入自身代理，或 `AopContext.currentProxy()`（需开启 `exposeProxy = true`）——`@Transactional` 自调用失效就是这一条的头号案例。
+修法（自调用）：拆到另一个类 / 注入自身代理 / `AopContext.currentProxy()`（需 `exposeProxy=true`）——[[Transactional 速记]] 的自调用失效是头号案例。
 
 <details>
 <summary>面试问答 (3题)</summary>
 
+Q：JoinPoint 和 Pointcut 有什么区别？
+
+A：JoinPoint 是可被拦截的时机（Spring 只有方法执行），是候选全集；Pointcut 是从中筛出子集的表达式，命中的才织入 Advice。
+
 Q：Spring AOP 和 AspectJ 的区别？
 
-A：Spring AOP 运行期动态代理织入，只拦方法调用，零额外编译成本；AspectJ 编译期/类加载期改字节码，连字段、构造器、static 方法都能拦，代价是要用 ajc 编译器。Spring 的 @AspectJ 风格只借了注解语法，底层仍是动态代理。
+A：Spring AOP 运行期代理织入，只拦方法调用、零编译成本；AspectJ 编译期/类加载期改字节码，字段、构造器、static 都能拦，代价是 ajc。@AspectJ 风格只借注解语法，底层仍是动态代理。
 
 Q：@Around 相比 @Before + @After 的不可替代点？
 
-A：只有 @Around 能控制流程：proceed() 决定目标执不执行、proceed(newArgs) 换入参、返回前改写返回值、catch 后吞/转异常，其余四个时机型通知全部只能观察。事务提交回滚、缓存命中跳过执行、限流拒绝都必须 @Around。
-
-Q：同类自调用为什么失效？
-
-A：增强挂在代理上，同类里 this.methodB() 的 this 是原始对象，调用没经过代理，拦截器链不触发。
+A：只有它能控制流程：proceed() 决定目标执不执行、proceed(newArgs) 换入参、返回前改返回值、catch 后吞/转异常；其余四个只能观察。
 
 </details>
 
 <details>
-<summary>常见误区 (2条)</summary>
+<summary>常见误区 (3条)</summary>
 
-- 误区：@AfterReturning 里给返回值参数重新赋值能改结果。改的只是绑定副本的指向，调用方拿到的还是原返回值；但返回值是可变对象时改它的字段会生效（同一引用）。
-- 误区：写了 @Aspect 注解切面就生效。切面类还必须是 Spring bean（@Component 或 @Bean 注册）；纯 Spring Framework 还要 @EnableAspectJAutoProxy，Boot 已自动开启。
+- 误区：JoinPoint 就是切点。切点是筛选条件，JoinPoint 是被筛的候选时机——「规则」与「被选中的执行点」。
+- 误区：@Before 里改 `getArgs()` 数组就能换入参。换入参只走 @Around 的 `proceed(newArgs)`。
+- 误区：写了 @Aspect 就生效。切面类还须是 Spring bean；纯 Framework 还要 `@EnableAspectJAutoProxy`，Boot 已自动开启。
 
 </details>

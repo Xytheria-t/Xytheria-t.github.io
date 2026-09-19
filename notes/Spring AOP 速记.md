@@ -10,7 +10,7 @@ Spring AOP 把日志、事务、权限这类「横切关注点」从业务代码
 | 概念 | 含义 |
 | --- | --- |
 | Aspect 切面 | 横切关注点的模块化（@Aspect 类） |
-| JoinPoint 连接点 | 可织入的时机（Spring 里只有方法调用） |
+| JoinPoint 连接点 | 可织入的时机（Spring 里只有方法**执行**） |
 | Pointcut 切点 | 用表达式筛出哪些 JoinPoint 要织入 |
 | Advice 通知 | 织入的时机与动作（@Before / @After / @Around 等） |
 | Target 目标对象 | 被代理的原始对象 |
@@ -18,7 +18,7 @@ Spring AOP 把日志、事务、权限这类「横切关注点」从业务代码
 | Weaving 织入 | 把切面套到目标上生成代理的过程 |
 
 ## 连接点 vs 切点
-连接点 = 所有可能织入的执行点，切点 = 用表达式筛出的子集，如 `execution(* com.demo.service..*(..))`。
+连接点 = 所有可能织入的执行点，切点 = 用表达式筛出的子集，如 `execution(* com.demo.service..*(..))`。通知方法收到的 `JoinPoint` 对象是「这一次命中的现场」（签名、入参、`getTarget()` 原始对象 / `getThis()` 代理）。
 
 ## 失效边界
 - 同类自调用：`this.methodB()` 的 `this` 是原始对象、绕开代理，增强失效（同 [[Transactional 速记]]）。
