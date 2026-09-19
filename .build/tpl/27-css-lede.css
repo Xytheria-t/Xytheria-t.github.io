@@ -21,7 +21,6 @@
 .art .lede-cap{
   display:flex;align-items:center;gap:9px;
   margin:0 0 .85rem;
-  font-family:var(--sans);
   font-size:10.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
   color:var(--accent-ink);
 }
@@ -34,7 +33,6 @@
 
 .art .lede-main{
   margin:0 0 .6rem;
-  font-family:var(--serif);
   font-size:clamp(18px, 2.05vw, 21px);
   line-height:1.72;
   color:var(--ink);
@@ -60,7 +58,7 @@
 }
 .art .lede-sub li{
   display:flex;align-items:baseline;gap:12px;
-  font-family:var(--sans);font-size:13.5px;line-height:1.72;color:var(--muted);
+  font-size:13.5px;line-height:1.72;color:var(--muted);
 }
 .art .lede-sub-l{
   flex:none;
