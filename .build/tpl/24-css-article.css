@@ -6,7 +6,15 @@
   line-height:1.16;margin:0 0 2.6rem;letter-spacing:.005em;padding-bottom:.6rem}
 .art h1::after{content:"";display:block;width:56px;height:3px;margin-top:1rem;border-radius:2px;
   background:linear-gradient(90deg,var(--accent-ink),transparent)}
-.art .meta{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin:-2rem 0 2.4rem;flex-wrap:wrap}
+.art .meta{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:-2rem 0 2.4rem;flex-wrap:wrap}
+.art .meta-right{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--muted);letter-spacing:.04em}
+.art .meta-info{font-variant-numeric:tabular-nums}
+.art .cat-chip{display:inline-flex;align-items:center;gap:6px;padding:3px 11px 3px 9px;border-radius:999px;
+  font-family:var(--sans);font-size:11.5px;font-weight:600;letter-spacing:.06em;color:var(--accent-ink);
+  background:color-mix(in srgb,var(--accent) 14%,#fff);
+  border:1px solid color-mix(in srgb,var(--accent) 42%,var(--line));
+  box-shadow:0 1px 2px rgba(0,0,0,.02),0 8px 18px -14px color-mix(in srgb,var(--accent) 40%,transparent)}
+.art .cat-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
 .art .et{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:500}
 
 

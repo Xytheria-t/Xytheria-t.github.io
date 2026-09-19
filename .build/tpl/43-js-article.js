@@ -38,9 +38,22 @@ function articleHTML(n){
   const etHtml = etStr
     ? '<div class="et" title="最后修改时间"><svg class="ei" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>最后编辑 · '+etStr+'</div>'
     : '';
+  // 右上 meta：分类 chip（根墙 Overview 跳过）+ 字数 + 相对时间；根墙整行就没必要再点了
+  const catChip = (n.catLabel && n.catLabel !== 'Overview')
+    ? '<span class="cat-chip" style="--accent:'+n.accent+';--accent-ink:'+n.accentInk+'"><span class="cat-dot"></span>'+esc(n.catLabel)+'</span>'
+    : '';
+  const sizeStr = sizeLabel(n.html);
+  const relStr = mt && !isNaN(mt) ? relTime(mt.getTime()) : '';
+  const metaRight = (catChip || sizeStr || relStr)
+    ? '<div class="meta-right">'
+      + catChip
+      + (sizeStr ? '<span class="meta-info">'+esc(sizeStr)+'</span>' : '')
+      + (relStr ? '<span class="meta-info" title="最后编辑 '+attr(etStr)+'">'+esc(relStr)+'</span>' : '')
+      + '</div>'
+    : '';
   return '<article class="art" style="--accent:'+n.accent+';--accent-ink:'+n.accentInk+'">'
     + '<h1>'+esc(n.title)+'</h1>'
-    + '<div class="meta">'+ etHtml + '</div>'
+    + '<div class="meta">'+ etHtml + metaRight + '</div>'
     + body
     + '</article>';
 }
