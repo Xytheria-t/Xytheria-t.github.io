@@ -81,12 +81,9 @@ for (const [f, v] of meta) {
     if (head.length < 10) iss.push('既无[思维链路速查]也无导语');
   } else if (!/```(chain|branch)/.test(topSeg)) iss.push('顶部非chain/branch');
 
-  // 开篇定义句：H1 与首个 H2 之间必须有「X 是什么」的本体段（MOC 走墙、题卡/速记另有形态，豁免）
+  // 开篇定义句：MOC/题卡/速记另有形态（豁免），其余原子笔记必须以 :::lede 块写「X 是什么」，且块非空
   if (!v.isMoc && !v.clip && v.cat !== 'leetcode') {
-    const defSeg = body.replace(/^\s*#[^\r\n]*\r?\n?/, '').split(/^##[ \t]/m)[0]
-      .replace(/```[\s\S]*?(```|$)/g, '')
-      .split('\n').filter(l => l.trim() && !/^\s*[>|<\-*\d]/.test(l)).join('').trim();
-    if (defSeg.length < 20) iss.push('缺开篇定义句(<20字)');
+    if (!/:::lede\s*\r?\n[\s\S]*?\r?\n:::/.test(body)) iss.push('缺 :::lede 块');
   }
 
   const h2 = [...body.matchAll(/^##[ \t]+(.*)$/gm)].map(m => m[1]);

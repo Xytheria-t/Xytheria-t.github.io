@@ -6,7 +6,9 @@ aliases: [ThreadLocalMap, 线程封闭]
 
 # ThreadLocal
 
+:::lede
 ThreadLocal 是 JDK 提供的线程封闭工具：让每个线程各自持有一份变量副本，从而用「不共享」代替同步。它只做隔离、不做互斥，也不保证被多线程共享的对象本身安全。
+:::
 
 ## 思维链路速查
 

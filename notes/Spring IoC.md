@@ -4,7 +4,10 @@ category: spring
 ---
 # Spring IoC
 
-IoC（Inversion of Control，控制反转）是一种设计思想：把对象的创建与依赖组装从业务代码移交给容器，业务只声明「要什么」而不自己 `new`；Spring 的载体是 IoC 容器（`BeanFactory` / `ApplicationContext`），DI（依赖注入）是它最常用的落地手段。
+:::lede
+**IoC**（Inversion of Control，控制反转）是一种设计思想：把对象的创建与依赖组装从业务代码移交给容器，业务只声明「要什么」而不自己 `new`。
+**载体与落地：** Spring 的载体是 IoC 容器（`BeanFactory` / `ApplicationContext`），DI（依赖注入）是它最常用的落地手段。
+:::
 
 ## 思维链路速查
 

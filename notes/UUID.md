@@ -5,7 +5,9 @@ category: system-design
 
 # UUID
 
+:::lede
 UUID（Universally Unique Identifier，通用唯一识别码）是一种按 RFC 9562 标准定义的全局唯一标识符，可由任意节点本地生成而不必协调，用于解决分布式系统中主键不冲突的问题。
+:::
 
 ## 思维链路速查
 

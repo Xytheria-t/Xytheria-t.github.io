@@ -6,7 +6,9 @@ aliases: [戳记锁, 乐观读锁]
 
 # StampedLock
 
+:::lede
 StampedLock 是一种戳记锁（stamp lock）：每次获取锁返回一个 stamp，用它代表并校验这次持锁，因此能支持不加锁的乐观读。它与读写锁的关键区别是不可重入、没有 Condition，也不实现 Lock 接口。
+:::
 
 ## 思维链路速查
 

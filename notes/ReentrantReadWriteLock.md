@@ -6,7 +6,9 @@ aliases: [读写锁, 读写分离锁]
 
 # ReentrantReadWriteLock
 
+:::lede
 ReentrantReadWriteLock 是一对配套的读写锁（读锁共享、写锁独占），基于 AQS 实现且可重入。它把「读」与「写」分开授权，只为读多写少的场景降低互斥成本，写多时并不比普通互斥锁划算。
+:::
 
 ## 思维链路速查
 

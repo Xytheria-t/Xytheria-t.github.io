@@ -6,7 +6,9 @@ aliases: [Cookie, Session, Token, JWT, 会话管理]
 
 # Cookie、Session与Token
 
+:::lede
 Cookie、Session 与 Token 是 HTTP 无状态前提下维持用户会话的三类凭证方案，解决「服务端记不住你是谁」的问题；三者差别只在状态存在哪一方——客户端、服务端，还是令牌自身。
+:::
 
 ## 思维链路速查
 

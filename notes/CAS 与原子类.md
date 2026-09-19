@@ -6,7 +6,9 @@ aliases: [CAS, 原子类, 无锁, Compare-And-Swap]
 
 # CAS 与原子类
 
+:::lede
 CAS（Compare-And-Swap，比较并交换）是一种由 CPU 指令保证原子性的无锁更新手段：比较内存当前值与预期旧值，相等才写入新值。原子类（AtomicInteger、AtomicLong 等）是它的封装产物，把单变量原子更新包装成可直接调用的 API。
+:::
 
 ## 思维链路速查
 

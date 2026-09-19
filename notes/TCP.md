@@ -6,7 +6,9 @@ aliases: [传输控制协议, Transmission Control Protocol]
 
 # TCP
 
+:::lede
 TCP（Transmission Control Protocol，传输控制协议）是位于传输层的面向连接的可靠字节流协议，在不可靠的 IP 网络之上提供不丢、不重、按序的端到端传输。
+:::
 
 ## 思维链路速查
 

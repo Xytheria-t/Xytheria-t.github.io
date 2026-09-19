@@ -6,7 +6,9 @@ aliases: [超文本传输协议, HyperText Transfer Protocol]
 
 # HTTP
 
+:::lede
 HTTP（HyperText Transfer Protocol，超文本传输协议）是位于应用层的请求-响应式协议，规定报文的格式与请求方法的语义，解决客户端与服务端之间「怎么请求、怎么回应」的约定问题。
+:::
 
 ## 思维链路速查
 

@@ -7,7 +7,9 @@ aliases: [线程池 ThreadPoolExecutor]
 
 # ThreadPoolExecutor
 
+:::lede
 ThreadPoolExecutor 是 JDK 线程池的核心实现类，用一组常驻线程加一条任务队列承接提交的任务，并管理线程的创建、复用与回收。它只管调度与生命周期，队列满了之后怎么办交给拒绝策略决定。
+:::
 
 ## 思维链路速查
 

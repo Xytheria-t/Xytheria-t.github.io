@@ -148,6 +148,8 @@ function extractExcerpt(body) {
 
 // mermaid 源码以纯文本形式存在 div 里，渲染时取 textContent 喂给 render()
 const escapeMermaid = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+// Lede 块识别出的标签（如「**载体与落地：**」里的「载体与落地」）由 build 端写入 HTML，要做基本 escape
+const escStr = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 // ---- highlight + line numbers ----
 const unescape = (s) =>
@@ -232,6 +234,49 @@ function buildCallout(type, firstP, rest) {
   return `<div class="callout ${t}"><div class="ct"><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg>${label}</div>${subHtml}${bodyHtml}${rest}</div>`;
 }
 
+// ---- Lede 块（开篇主旨 / Definition） ----
+// markdown 语法：:::lede\r?\n...\r?\n:::（前后空行）。首行为「是什么」主行；其余以「**标签：** 内容」形式开头的行被识别为副行（边界/载体/对比等）。
+// 渲染：抽离块 → 用占位符替换 → marked.parse 后再把占位符换为 <aside class="lede">，主行用 marked.parseInline 渲染、副行逐项渲染。
+function preprocessLede(body) {
+  const ledes = [];
+  const out = body.replace(
+    /(^[ \t]*:::lede[ \t]*\r?\n)([\s\S]*?)(\r?\n[ \t]*:::[ \t]*(?=\r?\n|$))/gm,
+    (_m, _open, content) => {
+      const idx = ledes.push(content) - 1;
+      return `\n\n<!--__LEDE_${idx}__-->\n\n`;
+    }
+  );
+  return { body: out, ledes };
+}
+function buildLede(content) {
+  const lines = content.split(/\r?\n/);
+  const mainLines = [];
+  const sub = [];
+  for (const ln of lines) {
+    const t = ln.trim();
+    if (!t) continue;
+    const m = t.match(/^\*\*\s*([^*\n]+?)\s*[：:]\s*\*\*\s*(.+)$/);
+    if (m) sub.push({ label: m[1].trim(), text: m[2].trim() });
+    else mainLines.push(t);
+  }
+  const mainText = mainLines.join(' ');
+  const mainHtml = mainText ? marked.parseInline(mainText) : '';
+  const subHtml = sub.map((s) =>
+    `<li><span class="lede-sub-l">${escStr(s.label)}</span><span class="lede-sub-t">${marked.parseInline(s.text)}</span></li>`
+  ).join('');
+  return (
+    '<aside class="lede">' +
+      '<header class="lede-cap"><span class="lede-cap-mark" aria-hidden="true"></span><span class="lede-cap-text">主旨 · Definition</span></header>' +
+      (mainHtml ? `<p class="lede-main">${mainHtml}</p>` : '') +
+      (subHtml ? `<ul class="lede-sub">${subHtml}</ul>` : '') +
+    '</aside>'
+  );
+}
+function renderLedeBlocks(html, ledes) {
+  if (!ledes.length) return html;
+  return html.replace(/<!--__LEDE_(\d+)__-->/g, (_m, i) => buildLede(ledes[+i]));
+}
+
 function transformCallouts(html) {
   // marked 会把嵌套 `>` 渲染成嵌套 <blockquote>。原实现在一层正则上吃掉了所有内层 callout。
   // 改为：反复替换「内部不含 <blockquote> 的最内层 callout」，每轮剥一层洋葱，直到稳定。
@@ -254,7 +299,8 @@ function transformCallouts(html) {
 }
 
 function renderMarkdown(body) {
-  let html = marked.parse(body);
+  const { body: bodyText, ledes } = preprocessLede(body);
+  let html = marked.parse(bodyText);
   html = transformCallouts(html);
   html = html.replace(
     /<pre><code class="language-chain">([\s\S]*?)<\/code><\/pre>/g,
@@ -286,6 +332,7 @@ function renderMarkdown(body) {
   html = html.replace(/<table>([\s\S]*?)<\/table>/g, '<div class="tbl"><table>$1</table></div>');
   html = autoLabelMermaid(html);
   html = highlightBlock(html);
+  html = renderLedeBlocks(html, ledes);
   return html;
 }
 
@@ -691,6 +738,7 @@ const TPL_MANIFEST = [
   '24-css-article.css',  // 正文页（.art / 代码块 / callout / chain / mermaid 容器 / gantt）
   '25-css-fx.css',       // 交互层样式（halo / ripple）
   '26-css-mobile.css',   // 手机端适配（≤540px）
+  '27-css-lede.css',     // Lede 块（开篇主旨 / Definition）：左侧色条 + 主行 + 副行
   '30-tail.html',        // </style> + <body> 壳 + <script> 开标签
   '40-js-core.js',       // NOTES/ROOT_ID 注入点 + DOM refs + esc/attr
   '41-js-metrics.js',    // 内容度量：字数 / 结构密度 / relTime

@@ -6,7 +6,9 @@ excerpt: AOP 把日志、事务这类横切逻辑写进切面，由容器运行�
 
 # Spring AOP
 
+:::lede
 AOP（Aspect-Oriented Programming，面向切面编程）是一种把散布在各业务方法里的横切逻辑抽成切面、再由容器统一织回的设计范式；Spring AOP 以运行期动态代理实现它，只能拦方法调用。
+:::
 
 ## 思维链路速查
 
