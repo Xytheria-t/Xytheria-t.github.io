@@ -25,15 +25,20 @@ Bean 生命周期 | 填充→初始化→销毁 | 核心
 
 反转前业务自己 `new` 依赖、控制权在业务；反转后创建与组装权归容器，对象只声明要什么——容器造出来并管起来的对象叫 Bean。落地方式有两种：DI（容器把依赖注入进来，主流）与 DL 依赖查找（`getBean`/`ObjectProvider` 主动索取）。
 
-容器是两级接口：
+容器接口分两级：
 
 | 接口 | 能力 | 典型实现 |
 |---|---|---|
-| `BeanFactory` | 最小容器：`getBean`、装配、作用域 | `DefaultListableBeanFactory` |
-| `ApplicationContext` | BeanFactory 之上加事件发布、国际化、资源加载、AOP/自动配置接入点 | `AnnotationConfigApplicationContext` |
+| `BeanFactory` | 最小容器规范：`getBean`、装配、作用域 | `DefaultListableBeanFactory` |
+| `ApplicationContext` | 之上再加事件发布、国际化、资源加载、AOP/自动配置接入点 | `AnnotationConfigApplicationContext` |
 
-> [!note] 实例化时机是选型的分水岭
-> `BeanFactory` 懒加载（`getBean` 才造）；`ApplicationContext` 在启动时造完所有非懒加载单例（`refresh` 的 `finishBeanFactoryInitialization`）——启动慢一点，但配置错误在启动期就爆。
+「容器对象」指的具体是哪一个：
+
+- `BeanFactory` 是**最顶层接口/规范**，它本身不是容器对象；实现它的类的实例（`DefaultListableBeanFactory`）才是基础容器（容器核心）。
+- 平时说的「Spring 容器对象」通常指 `ApplicationContext` 的实现类：`AnnotationConfigApplicationContext`、`ClassPathXmlApplicationContext`。
+- `ApplicationContext` 继承 `BeanFactory`，所以容器对象本身也是 BeanFactory——`getBean` 这类能力就是从它继承来的。
+
+实例化时机是两级的分水岭：`BeanFactory` 懒加载（`getBean` 才造）；`ApplicationContext` 在 `refresh` 的 `finishBeanFactoryInitialization` 里造完所有非懒加载单例——启动慢一点，但配置错误在启动期就爆。
 
 ## BeanDefinition：容器拿到的是配方
 
@@ -53,8 +58,7 @@ Bean 生命周期 | 填充→初始化→销毁 | 核心
 finishBeanFactoryInitialization | 实例化全部非懒加载单例 | 4
 ```
 
-> [!warning] 配方必须在第 2 步前收齐
-> 后处理只能改已注册的配方；组件扫描先于自动配置执行，正是 `@ConditionalOnMissingBean` 判得准的前提（[[Spring Boot 自动配置]]）。
+后处理只能改已注册的配方，所以配方必须在第 2 步前收齐；组件扫描先于自动配置执行，正是 `@ConditionalOnMissingBean` 判得准的前提（[[Spring Boot 自动配置]]）。
 
 ## Bean 生命周期
 
@@ -69,8 +73,7 @@ finishBeanFactoryInitialization | 实例化全部非懒加载单例 | 4
 | 就绪 | 进单例池 `singletonObjects` | — |
 | 销毁 | `@PreDestroy` → `DisposableBean#destroy` → `destroyMethod` | 只管 singleton |
 
-> [!danger] 代理生成在初始化之后
-> 拿到手的 bean 往往是代理，自调用失效、`final` 类代理失败都源于此时机（[[Spring AOP]]）；三级缓存要提前造代理，本质是绕开这一步。
+拿到手的 bean 往往是代理：自调用失效、`final` 类代理失败都源于「代理在初始化之后才生成」（[[Spring AOP]]）；三级缓存提前造代理，本质是绕开这一步。
 
 ## 注入方式与歧义消解
 
@@ -111,10 +114,11 @@ A 拿到 B 并初始化 | 进一级缓存 | 5
 
 三级存 `ObjectFactory` 而非半成品对象，是为了**延迟决定**：只有真被循环引用时才调 `getEarlyBeanReference` 提前造 AOP 代理，未卷入循环的 bean 仍在初始化后造代理，两条路径靠 `earlyProxyReferences` 去重。只有二级的话早期引用必是原始对象，B 拿到的 A 与最终成品不是同一个。
 
-> [!danger] 三种情况解不了
-> - 构造器注入：实例化阶段就要依赖，对象还没影、没有半成品可暴露 → `BeanCurrentlyInCreationException`。
-> - `prototype`：容器不缓存 prototype，无缓存可借 → 直接抛。
-> - Boot 2.6+ `spring.main.allow-circular-references` 默认 false，循环引用启动即失败。
+解不了的三种情况：
+
+- 构造器注入：实例化阶段就要依赖，对象还没影、没有半成品可暴露 → `BeanCurrentlyInCreationException`。
+- `prototype`：容器不缓存 prototype，无缓存可借 → 直接抛。
+- Boot 2.6+ `spring.main.allow-circular-references` 默认 false，循环引用启动即失败。
 
 修法：改构造器注入把问题顶到启动期、`@Lazy` 延迟一方实例化、抽第三个类把环拆成链。
 
@@ -139,11 +143,11 @@ public class OrderService {
 
 Q：IoC 和 DI 是什么关系？
 
-A：IoC 是思想——创建与组装权从业务代码移到容器；DI 是它的落地手段（另一种是依赖查找）。Spring 的 IoC 容器即 `BeanFactory`。
+A：IoC 是思想——创建与组装权从业务代码移到容器；DI 是它的落地手段（另一种是依赖查找）。Spring 的载体是 IoC 容器：`BeanFactory` 是最顶层规范，实际容器对象是 `ApplicationContext` 实现类。
 
 Q：ApplicationContext 与 BeanFactory 的区别？
 
-A：BeanFactory 是最小容器、懒加载；ApplicationContext 在它之上加了事件发布、国际化、资源加载、AOP/自动配置接入，且默认启动时预实例化所有非懒加载单例。
+A：BeanFactory 是最顶层容器规范（实现它的类的实例才算基础容器）、懒加载；ApplicationContext 继承它并加上事件发布、国际化、资源加载、AOP/自动配置接入，默认启动时预实例化所有非懒加载单例。
 
 Q：三级缓存为什么第三级存 ObjectFactory 而不是半成品？
 
