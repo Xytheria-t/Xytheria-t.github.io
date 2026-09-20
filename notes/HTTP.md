@@ -97,15 +97,7 @@ HTTP（HyperText Transfer Protocol，超文本传输协议）是位于应用层�
 
 ## 状态管理
 
-无状态协议要保持登录态，靠客户端每次回传凭证：
-
-| 方案 | 凭证放在哪 | 特点 |
-|---|---|---|
-| Cookie + Session | 浏览器自动带 `Cookie`，服务端存 Session | 服务端有状态，需共享存储 |
-| Token / JWT | `Authorization` 头，服务端无状态 | 签发后难即时失效 |
-
-- Cookie 三个安全属性生产必配：`HttpOnly` 阻断 JS 读取（防 XSS）、`Secure` 仅 [[HTTPS]] 传输、`SameSite` 限制跨站携带（防 CSRF）。
-- 无状态不等于「服务端什么都不存」：Token 把状态挪进了令牌，黑名单 / 刷新令牌仍需存储，消除的是每连接状态而非业务状态。
+无状态要保持登录态，只能靠客户端每次回传凭证：Cookie + Session 把状态留在服务端，Token / JWT 把状态写进令牌自身——携带方式、扩展性、失效能力与攻击面的逐项对比见 [[Cookie、Session与Token]]。
 
 <details>
 <summary>面试问答 (3题)</summary>
