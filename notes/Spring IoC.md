@@ -66,8 +66,14 @@ finishBeanFactoryInitialization | 实例化全部非懒加载单例 | 4
 | 初始化前 | `BeanPostProcessor#postProcessBeforeInitialization` | `@PostConstruct` 在此执行 |
 | 初始化 | `afterPropertiesSet` → `@Bean(initMethod)` | 顺序固定：注解 → 接口 → 方法 |
 | 初始化后 | `postProcessAfterInitialization` | **AOP 代理在此生成**（[[Spring AOP]]） |
-| 就绪 | 进单例池 `singletonObjects` | — |
+| 就绪 | singleton 进单例池 `singletonObjects` | — |
 | 销毁 | `@PreDestroy` → `DisposableBean#destroy` → `destroyMethod` | 只管 singleton |
+
+不进单例池的例外：
+
+- `prototype`：造完直接交出，容器不缓存，销毁回调也不管。
+- request / session / application 等 scope：存在各自作用域里，不进 `singletonObjects`。
+- `FactoryBean`：单例池里存的是工厂本身（`&beanName` 取它），`getObject()` 的产物另存 `factoryBeanObjectCache`。
 
 拿到手的 bean 往往是代理：自调用失效、`final` 类代理失败都源于「代理在初始化之后才生成」（[[Spring AOP]]）；三级缓存提前造代理，本质是绕开这一步。
 
