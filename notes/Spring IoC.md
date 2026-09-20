@@ -32,11 +32,7 @@ Bean 生命周期 | 填充→初始化→销毁 | 核心
 | `BeanFactory` | 最小容器规范：`getBean`、装配、作用域 | `DefaultListableBeanFactory` |
 | `ApplicationContext` | 之上再加事件发布、国际化、资源加载、AOP/自动配置接入点 | `AnnotationConfigApplicationContext` |
 
-「容器对象」指的具体是哪一个：
-
-- `BeanFactory` 是**最顶层接口/规范**，它本身不是容器对象；实现它的类的实例（`DefaultListableBeanFactory`）才是基础容器（容器核心）。
-- 平时说的「Spring 容器对象」通常指 `ApplicationContext` 的实现类：`AnnotationConfigApplicationContext`、`ClassPathXmlApplicationContext`。
-- `ApplicationContext` 继承 `BeanFactory`，所以容器对象本身也是 BeanFactory——`getBean` 这类能力就是从它继承来的。
+`BeanFactory` 是接口/规范，实现它的类的实例（`DefaultListableBeanFactory`）才是基础容器；平时说的「Spring 容器对象」通常指 `ApplicationContext` 实现类，它继承 `BeanFactory`——`getBean` 等能力由此继承而来。
 
 实例化时机是两级的分水岭：`BeanFactory` 懒加载（`getBean` 才造）；`ApplicationContext` 在 `refresh` 的 `finishBeanFactoryInitialization` 里造完所有非懒加载单例——启动慢一点，但配置错误在启动期就爆。
 
@@ -143,7 +139,7 @@ public class OrderService {
 
 Q：IoC 和 DI 是什么关系？
 
-A：IoC 是思想——创建与组装权从业务代码移到容器；DI 是它的落地手段（另一种是依赖查找）。Spring 的载体是 IoC 容器：`BeanFactory` 是最顶层规范，实际容器对象是 `ApplicationContext` 实现类。
+A：IoC 是思想——创建与组装权从业务代码移到容器；DI 是它的落地手段（另一种是依赖查找）。
 
 Q：ApplicationContext 与 BeanFactory 的区别？
 
