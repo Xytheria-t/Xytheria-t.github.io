@@ -69,7 +69,7 @@ finishBeanFactoryInitialization | 实例化全部非懒加载单例 | 4
 | 就绪 | singleton 进单例池 `singletonObjects` | — |
 | 销毁 | `@PreDestroy` → `DisposableBean#destroy` → `destroyMethod` | 只管 singleton |
 
-默认作用域就是 singleton（不写 `@Scope` 即是），所以绝大多数 bean 都进单例池；不进的例外：
+默认作用域是 singleton（不写 `@Scope` 即是）——业务组件无状态，一个实例反复复用最省，所以绝大多数 bean 都进单例池。不进的例外：
 
 - `prototype`：造完直接交出，容器不缓存，销毁回调也不管。
 - request / session / application 等 scope：存在各自作用域里，不进 `singletonObjects`。
@@ -153,7 +153,7 @@ A：BeanFactory 是最顶层容器规范（实现它的类的实例才算基础�
 
 Q：三级缓存为什么第三级存 ObjectFactory 而不是半成品？
 
-A：为了延迟决定——只有真被循环引用时才提前生成 AOP 代理，未卷入的仍在初始化后生成，两条路径靠 `earlyProxyReferences` 去重；只有二级则早期引用是原始对象，与最终成品不是同一个。
+A：延迟决定——被循环引用才提前造 AOP 代理，未卷入的仍在初始化后造，靠 `earlyProxyReferences` 去重；只有二级则早期引用是原始对象，与成品不是同一个。
 
 Q：构造器注入的循环依赖为什么无解？
 
