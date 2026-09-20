@@ -69,7 +69,7 @@ finishBeanFactoryInitialization | 实例化全部非懒加载单例 | 4
 | 就绪 | singleton 进单例池 `singletonObjects` | — |
 | 销毁 | `@PreDestroy` → `DisposableBean#destroy` → `destroyMethod` | 只管 singleton |
 
-不进单例池的例外：
+默认作用域就是 singleton（不写 `@Scope` 即是），所以绝大多数 bean 都进单例池；不进的例外：
 
 - `prototype`：造完直接交出，容器不缓存，销毁回调也不管。
 - request / session / application 等 scope：存在各自作用域里，不进 `singletonObjects`。
