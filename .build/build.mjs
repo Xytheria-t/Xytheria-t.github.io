@@ -358,11 +358,11 @@ function renderMarkdown(body) {
   return html;
 }
 
-// 把「思维链路速查」整节包成可折叠 details（默认展开，h2 仍留在 summary 内供脊线抓取）
+// 把「思维链路速查」整节包成可折叠 details（默认折叠，h2 仍留在 summary 内供脊线抓取）
 function foldThinking(html) {
   return html.replace(
     /(<h2>\s*思维链路速查\s*<\/h2>)([\s\S]*?)(?=<h2>|$)/,
-    '<details class="think-fold" open><summary>$1</summary>$2</details>'
+    '<details class="think-fold"><summary>$1</summary>$2</details>'
   );
 }
 
