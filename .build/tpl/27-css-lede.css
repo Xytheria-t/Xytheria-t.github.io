@@ -1,38 +1,30 @@
 /* Lede 块（开篇主旨）—— 开篇定义组件。
-   铁律：主行只比正文略大（正文 .art p 是 17px/1.9），不再做「大号引言」——中文长句放大会拖垮可读性；
-   行长用 max-width 收口；副行走轻量化要点（左标签 + 细竖线），不做 badge 底框，避免色块噪音。
-   视觉：左侧实色细条 + 标签行（右侧延伸细线）+ 主行 + 一条分隔线下的要点。单主题暖纸底，禁渐变文字。 */
+   铁律：不做色块底框（暖色底 + 深棕条会把整块压暗），只靠「亮色竖条 + 上下留白 + 一条淡收口线」与正文分层；
+   主行只比正文略大（正文 .art p 是 17px/1.9），行长用 max-width 收口；
+   要点行走轻量化清单（小号标签 + 细竖线），accent-ink 只用于小面积标签，避免整块发暗。
+   单主题浅色，禁渐变文字。 */
 .art .lede{
   position:relative;
-  margin:0 0 2.3rem;
-  padding:1.2rem 1.5rem 1.25rem 1.7rem;
-  border-radius:12px;
-  background:color-mix(in srgb, var(--accent) 3.2%, var(--bg));
-  border:1px solid color-mix(in srgb, var(--accent) 20%, var(--line));
-  box-shadow:
-    0 1px 2px rgba(40,30,20,.025),
-    0 10px 26px -26px rgba(40,30,20,.18);
+  margin:0 0 2.2rem;
+  padding:0 0 1.15rem 1.2rem;
+  border-bottom:1px solid var(--line);
 }
 .art .lede::before{
   content:"";
-  position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:2px;
-  background:var(--accent-ink);opacity:.62;
+  position:absolute;left:0;top:5px;bottom:1.15rem;width:3px;border-radius:2px;
+  background:var(--accent);
 }
 
 .art .lede-cap{
   display:flex;align-items:center;gap:9px;
-  margin:0 0 .62rem;
+  margin:0 0 .5rem;
   font-family:var(--sans);
-  font-size:11px;font-weight:700;letter-spacing:.16em;
-  color:var(--accent-ink);
-}
-.art .lede-cap-mark{
-  width:5px;height:5px;border-radius:50%;flex:none;
-  background:var(--accent-ink);
+  font-size:11px;font-weight:700;letter-spacing:.18em;
+  color:var(--muted);
 }
 .art .lede-cap::after{
   content:"";flex:1;height:1px;
-  background:color-mix(in srgb, var(--accent) 34%, var(--line));
+  background:var(--line);
 }
 
 .art .lede-main{
@@ -44,28 +36,27 @@
   color:#2C2820;
   text-wrap:pretty;
 }
-.art .lede-main strong{color:var(--accent-ink);font-weight:600}
+.art .lede-main strong{color:var(--ink);font-weight:600}
 .art .lede-main code{
   font-family:var(--mono);font-size:.86em;
   padding:1px 6px;border-radius:5px;
-  background:color-mix(in srgb, var(--accent) 10%, var(--bg));
-  color:var(--accent-ink);
-  border:1px solid color-mix(in srgb, var(--accent) 22%, var(--line));
+  background:color-mix(in srgb, var(--accent) 12%, var(--bg));
+  color:var(--ink);
+  border:1px solid color-mix(in srgb, var(--accent) 26%, var(--line));
 }
 .art .lede-main a{color:var(--accent-ink);text-decoration:none;
-  border-bottom:1px solid color-mix(in srgb, var(--accent-ink) 38%, transparent)}
+  border-bottom:1px solid color-mix(in srgb, var(--accent-ink) 40%, transparent)}
 .art .lede-main a.wikilink{cursor:pointer;border-bottom-style:solid}
-.art .lede-main a:hover{background:color-mix(in srgb, var(--accent-ink) 10%, transparent)}
+.art .lede-main a:hover{background:color-mix(in srgb, var(--accent) 16%, transparent)}
 
 .art .lede-sub{
-  list-style:none;padding:.7rem 0 0;margin:.8rem 0 0;
-  display:grid;gap:.34rem;
-  border-top:1px solid color-mix(in srgb, var(--accent) 12%, var(--line));
+  list-style:none;padding:0;margin:.62rem 0 0;
+  display:grid;gap:.3rem;
 }
 .art .lede-sub li{
   display:flex;align-items:baseline;gap:10px;
   font-size:13px;line-height:1.8;
-  color:color-mix(in srgb, var(--ink) 90%, var(--bg));
+  color:color-mix(in srgb, var(--ink) 88%, var(--bg));
 }
 .art .lede-sub-l{
   flex:none;position:relative;padding-right:11px;
@@ -75,13 +66,13 @@
 }
 .art .lede-sub-l::after{
   content:"";position:absolute;right:0;top:.3em;bottom:.22em;width:1px;
-  background:color-mix(in srgb, var(--accent) 42%, var(--line));
+  background:color-mix(in srgb, var(--accent) 55%, var(--line));
 }
 .art .lede-sub-t{flex:1;min-width:0}
-.art .lede-sub-t code{font-family:var(--mono);font-size:.88em;color:var(--accent-ink);
-  padding:1px 6px;border-radius:5px;background:color-mix(in srgb, var(--accent) 8%, var(--bg));
-  border:1px solid color-mix(in srgb, var(--accent) 20%, var(--line))}
-.art .lede-sub-t strong{color:var(--accent-ink);font-weight:600}
+.art .lede-sub-t code{font-family:var(--mono);font-size:.88em;color:var(--ink);
+  padding:1px 6px;border-radius:5px;background:color-mix(in srgb, var(--accent) 10%, var(--bg));
+  border:1px solid color-mix(in srgb, var(--accent) 24%, var(--line))}
+.art .lede-sub-t strong{color:var(--ink);font-weight:600}
 
 @media (prefers-reduced-motion: no-preference){
   .art .lede{animation:lede-in .5s var(--ease) both}
@@ -89,7 +80,7 @@
 }
 
 @media (max-width:540px){
-  .art .lede{padding:1rem 1.05rem 1.05rem 1.35rem;border-radius:11px;margin-bottom:1.9rem}
+  .art .lede{padding:0 0 .95rem 1rem;margin-bottom:1.85rem}
   .art .lede-main{font-size:16.5px;line-height:1.88}
   .art .lede-sub li{flex-wrap:wrap;gap:4px 10px}
   .art .lede-sub-l::after{display:none}
