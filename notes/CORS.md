@@ -7,7 +7,8 @@ aliases: [跨域资源共享, Cross-Origin Resource Sharing]
 # CORS
 
 :::lede
-CORS（Cross-Origin Resource Sharing，跨域资源共享）是浏览器同源策略之上的放行机制：服务端用响应头声明「哪些来源可以读我的响应」，浏览器据此决定是否把跨域响应交给 JS。
+CORS（Cross-Origin Resource Sharing，跨域资源共享）是浏览器在同源策略之上提供的放行协议：服务端用响应头声明哪些来源可读其响应，浏览器据此决定跨域响应是否交给页面脚本。
+**主体：** 校验发生在浏览器 · 服务端不拦请求只声明 · 非简单请求先发预检
 :::
 
 同源策略阻止跨域读响应，CORS 是服务器声明「允许哪些来源读我」的标准化机制：简单请求直接发，非简单请求先 OPTIONS 预检。

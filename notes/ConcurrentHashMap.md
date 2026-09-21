@@ -6,7 +6,8 @@ category: java-collection
 # ConcurrentHashMap
 
 :::lede
-ConcurrentHashMap 是 JDK 提供的线程安全哈希表，面向高并发读写设计：它把互斥范围压到单个桶，读路径不加锁。它与 [[HashMap]] 的分界是线程安全，与 Hashtable 的分界是锁的粒度，而不是「有没有加锁」。
+ConcurrentHashMap 是支持检索全并发、更新高期望并发的线程安全哈希表：读路径全程不加锁，写只把互斥范围压到单个桶，用于取代整表加锁的 Hashtable。
+**分界：** 与 Hashtable 差在锁粒度 · 与 [[HashMap]] 差在线程安全 · 不保证复合操作原子
 :::
 
 ## 思维链路速查

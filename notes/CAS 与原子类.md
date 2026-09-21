@@ -7,7 +7,8 @@ aliases: [CAS, 原子类, 无锁, Compare-And-Swap]
 # CAS 与原子类
 
 :::lede
-CAS（Compare-And-Swap，比较并交换）是一种由 CPU 指令保证原子性的无锁更新手段：比较内存当前值与预期旧值，相等才写入新值。原子类（AtomicInteger、AtomicLong 等）是它的封装产物，把单变量原子更新包装成可直接调用的 API。
+CAS（Compare-And-Swap，比较并交换）是由 CPU 单条指令完成的原子操作：比较内存当前值与预期旧值，相等才写入新值，否则不写；`java.util.concurrent.atomic` 下的原子类是它对单变量的封装。
+**代价：** ABA 问题 · 自旋空耗 · 只能原子化一个变量
 :::
 
 ## 思维链路速查

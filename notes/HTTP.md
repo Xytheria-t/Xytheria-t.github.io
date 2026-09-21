@@ -7,7 +7,8 @@ aliases: [超文本传输协议, HyperText Transfer Protocol]
 # HTTP
 
 :::lede
-HTTP（HyperText Transfer Protocol，超文本传输协议）是位于应用层的请求-响应式协议，规定报文的格式与请求方法的语义，解决客户端与服务端之间「怎么请求、怎么回应」的约定问题。
+HTTP（HyperText Transfer Protocol，超文本传输协议）是无状态的应用层请求-响应协议，用可扩展的语义与自描述报文在客户端与服务端之间交换资源表述。
+**分界：** 只定义语义不管传输 · 默认承载于 TCP · 无状态靠 Cookie / Token 补
 :::
 
 应用层「请求-响应」协议：先立报文骨架与语义（方法 / 状态码），再看连接与版本如何省 RTT，最后用缓存与 Cookie 补性能与状态。

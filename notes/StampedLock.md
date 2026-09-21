@@ -7,7 +7,8 @@ aliases: [戳记锁, 乐观读锁]
 # StampedLock
 
 :::lede
-StampedLock 是一种戳记锁（stamp lock）：每次获取锁返回一个 stamp，用它代表并校验这次持锁，因此能支持不加锁的乐观读。它与读写锁的关键区别是不可重入、没有 Condition，也不实现 Lock 接口。
+StampedLock 是一种基于戳记（stamp）的锁，提供写锁、悲观读锁与乐观读三种模式：每次加锁返回一个 long 型戳记，用它代表并校验这次持锁。
+**代价：** 不可重入 · 无 Condition · 不实现 `Lock` 接口
 :::
 
 StampedLock(JDK8)用戳记(stamp)管理三种模式 → 乐观读无锁读后校验戳 → 戳记还能在持有锁时升降级 → 但不可重入、无原生 Condition → 适合极读多写少且读短。

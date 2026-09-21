@@ -7,7 +7,7 @@ aliases: [Java 锁比较, Java 同步原语对比]
 # Java 锁对比
 
 :::lede
-Java 锁对比是 JUC 同步原语的横向选型参考，把 synchronized、volatile、ReentrantLock、读写锁、StampedLock 与 CAS 原子类放在同一组维度下逐项比较。它回答的不是「某个锁怎么实现」，而是「某个场景该挑哪一个」。
+Java 锁对比是把 synchronized、volatile、ReentrantLock、读写锁、StampedLock 与 CAS 原子类放到同一组维度下的选型横评，回答的是「这个场景该挑哪一个」而非「某个锁怎么实现」。
 :::
 
 内置锁([[synchronized]])与可见性([[volatile]])打底 → 显式锁([[ReentrantLock]])补足中断/超时/公平 → 读写锁与乐观锁优化并发读 → 底层由 [[CAS 与原子类]]/[[AQS]] 支撑 → 按场景选型。

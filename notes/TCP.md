@@ -7,7 +7,8 @@ aliases: [传输控制协议, Transmission Control Protocol]
 # TCP
 
 :::lede
-TCP（Transmission Control Protocol，传输控制协议）是位于传输层的面向连接的可靠字节流协议，在不可靠的 IP 网络之上提供不丢、不重、按序的端到端传输。
+TCP（Transmission Control Protocol，传输控制协议）是传输层面向连接的可靠协议：在不可靠的 IP 服务之上提供按序、不丢、不重的字节流传输，并内置流量与拥塞控制。
+**分界：** 面向连接 · 字节流 · 可靠有序 · 有拥塞控制（对应 [[UDP]]）
 :::
 
 ## 思维链路速查

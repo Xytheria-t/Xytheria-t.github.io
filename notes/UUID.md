@@ -6,7 +6,8 @@ category: system-design
 # UUID
 
 :::lede
-UUID（Universally Unique Identifier，通用唯一识别码）是一种按 RFC 9562 标准定义的全局唯一标识符，可由任意节点本地生成而不必协调，用于解决分布式系统中主键不冲突的问题。
+UUID（Universally Unique Identifier，通用唯一识别码）是 128 位长的标识符，设计目标是无需中心协调即可在空间与时间上保证唯一。
+**常用版本：** v1 时间+MAC · v4 随机 · v7 时间有序（适合作 DB 主键）
 :::
 
 UUID 是本地生成的全局唯一标识：不依赖中心节点、不抢锁、不通信，代价是 128bit 太长、v1~v5 无序。

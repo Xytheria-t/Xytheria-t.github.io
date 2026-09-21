@@ -6,7 +6,8 @@ category: spring
 # Spring Boot 自动配置
 
 :::lede
-Spring Boot 自动配置是一种装配机制：starter 在 jar 里预置一批配置类，启动时按 classpath 与已有配置逐条裁定是否生效，用户声明过的默认实现会让位。
+Spring Boot 自动配置是一种约定优于配置的装配机制：依据 classpath 依赖、已有 Bean 与外部配置逐条裁定配置类是否生效，用户自己声明过的实现优先、自动配置让位。
+**条件：** `@ConditionalOnClass` / `@ConditionalOnMissingBean` · 装配顺序在用户 Bean 之后
 :::
 
 ## 思维链路速查

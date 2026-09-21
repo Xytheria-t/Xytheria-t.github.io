@@ -7,7 +7,8 @@ order: 2
 # HashMap
 
 :::lede
-HashMap 是 Java 基于哈希表实现的键值映射容器，靠 `hashCode` 定位桶、`equals` 判等，允许一个 null 键。它与 [[ConcurrentHashMap]] 的分界是线程安全，与 `TreeMap` 的分界是顺序不由比较器决定。
+HashMap 是基于哈希表的 `Map` 实现，允许 null 键与 null 值，不保证映射顺序、也不做同步：以 `hashCode` 定位桶、以 `equals` 判等，冲突链表过长时树化。
+**分界：** 无序（顺序归 LinkedHashMap / TreeMap）· 非线程安全（并发归 [[ConcurrentHashMap]]）
 :::
 
 ## 思维链路速查

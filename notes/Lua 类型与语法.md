@@ -6,7 +6,8 @@ category: redis
 # Lua 类型与语法
 
 :::lede
-Lua 是一种解释型、动态类型的脚本语言：变量本身没有类型而值才有类型，数字只有 number 一种、容器只有 table 一种（数组与哈希二合一），真值规则里只有 nil 与 false 为假。
+Lua 是一门轻量、可嵌入的动态类型脚本语言：变量本身无类型而值有类型，数值统一为 number、容器统一为 table，真假判定中只有 nil 与 false 为假。
+**值类型：** nil · boolean · number · string · table · function · userdata · thread
 :::
 
 这篇只取读写 [[Redis Lua 脚本]] 够用的语言子集，每处都拿 Java 对照；真正反直觉、会咬人的只有两处 —— 真值规则（0 也是「真」）和下标从 1 开始。
