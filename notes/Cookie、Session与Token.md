@@ -51,7 +51,21 @@ sequenceDiagram
 
 ## Cookie：凭证怎么带回来
 
-服务端用响应头 `Set-Cookie` 下发，浏览器按 `Domain` / `Path` 匹配，后续同域请求自动把它附在 `Cookie` 头里——**这是浏览器唯一会自动回传的凭证通道**，Token 要前端手动挂到 `Authorization` 头。
+Cookie 是浏览器的**原生**机制，Token 不是——这一条决定了后面所有差异：
+
+| 环节 | Cookie | Token |
+|---|---|---|
+| 服务端怎么给 | `Set-Cookie` 响应头 | 响应体里的一个字段 |
+| 存在哪 | 浏览器 Cookie 存储 | 前端代码自己挑 |
+| 谁负责下次带上 | 浏览器自动 | 前端每次手动 |
+| 挂在哪个头 | `Cookie` | `Authorization: Bearer …` |
+| 跨域时 | 受 `SameSite` 与 CORS 限制 | 无额外限制 |
+
+- 浏览器只在**同域且路径匹配**时自动附 Cookie，范围由 `Domain` / `Path` 决定；跨域要带上它，客户端加 `credentials: 'include'`、服务端回 `Access-Control-Allow-Credentials: true` 且来源写具体值，详见 [[CORS]]。
+
+## Cookie 的属性与安全
+
+属性分两类：决定**什么时候带上**（`Domain` / `Path` / `Expires`），和决定**被偷走时有多危险**（`HttpOnly` / `Secure` / `SameSite`）。
 
 | 属性 | 作用 | 示例 |
 |---|---|---|
@@ -73,13 +87,13 @@ sequenceDiagram
 > [!warning] 自动携带正是 CSRF 的成因
 > 请求只要发往匹配的域就必然带上 Cookie，攻击者不必读到它，借用户浏览器发一个跨站请求就能以用户身份操作。
 
-- 单个 Cookie 约 4KB 上限，只适合装小凭证；跨域要带上它，客户端加 `credentials: 'include'`、服务端回 `Access-Control-Allow-Credentials: true` 且来源写具体值，详见 [[CORS]]。
+- 单个 Cookie 约 4KB 上限，只适合装小凭证。
 
 ## Session：状态留在服务端
 
 Cookie 存在用户机器上、可读可改，把用户信息直接写进去等于让用户自己填身份；Session 的做法是 Cookie 里只放一个无业务含义的随机 ID，用户数据留在服务端。
 
-- 流程：登录校验通过 → 生成 Session ID 并存储（值为用户数据）→ `Set-Cookie` 下发 ID → 后续请求服务端拿 ID 查表还原用户。
+- 存的是「ID → 用户数据」的映射，所以服务端删掉这条映射，会话立刻失效。
 
 | 存储位置 | 优点 | 缺点 |
 |---|---|---|
@@ -120,7 +134,6 @@ JWT（JSON Web Token）把用户信息直接写进令牌，服务端只验签就
 | 维度 | Cookie + Session | Token / JWT |
 |---|---|---|
 | 状态存储 | 服务端 | 令牌自身 |
-| 携带方式 | `Cookie` 头，浏览器自动 | `Authorization` 头，手动 |
 | 水平扩展 | 需共享 Session 存储 | 天然支持 |
 | 即时失效 | 删 Session 即刻生效 | 到期前无法自然作废 |
 | 跨域 | 受 `SameSite` 与 CORS 限制 | 无额外限制 |
