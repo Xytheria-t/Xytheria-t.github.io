@@ -7,32 +7,51 @@ aliases: [Cookie, Session, Token, JWT, 会话管理]
 # Cookie、Session与Token
 
 :::lede
-Cookie、Session 与 Token 是 [[HTTP]] 无状态前提下维持用户会话的三类凭证方案，解决「服务端记不住你是谁」的问题。
-**边界：** 分水岭不在安全性，而在状态存在哪一方——客户端、服务端，还是令牌自身。
+Cookie 是浏览器自动回传的凭证载体，Session 与 Token 是两种「服务端凭什么认这张凭证」的方案：Session 把状态存在服务端、靠 ID 查表，Token 把状态签进令牌、验签即取信。
+**层级：** Cookie 管「怎么带回来」，Session / Token 管「状态放哪」——所以 JWT 同样能塞进 Cookie 里传。
 :::
 
 ## 思维链路速查
 
 ```chain
-凭证回传 | 浏览器自动带 Cookie / 手动挂 Token | 前提
-状态存放 | 服务端会话 / 令牌自包含 | 分歧
-失效能力 | 删状态即刻生效 / 等过期 | 代价
-攻击面 | 自动携带招 CSRF / 手动招 XSS | 权衡
-选型落地 | 短令牌 + 可撤销刷新 | 收敛
+登录签发 | 校验通过后发凭证 | 起点
+请求回传 | 浏览器自动带 / 前端手动挂 | 携带
+服务端认账 | 查会话存储 / 验令牌签名 | 校验
+失效登出 | 删服务端状态 / 等过期 | 收尾
 ```
 
-无状态意味着服务端不保留每连接上下文，凭证必须由客户端每次带回来。谁负责「带」、状态存在哪，决定了扩展性、失效能力与攻击面——下文按这条主线逐档对比。
+[[HTTP]] 无状态，服务端不记「上一次来的是谁」，每个请求都得自证身份。自证拆成两件事——凭证怎么送回来、服务端凭什么认它；把这两件事分开看，三者的关系才不会糊。
 
-## 凭证的携带方式
+## 一次登录，两条链路
 
-三类方案中只有 Cookie 由浏览器自动回传：服务端用 `Set-Cookie` 下发，浏览器按 `Domain` / `Path` 匹配，后续请求自动附在 `Cookie` 头。Token 没有这层自动化，必须手动挂到 `Authorization: Bearer <token>`。
+<details>
+<summary>Cookie + Session 与 JWT 的请求时序</summary>
 
-- 跨域要带上 Cookie，客户端加 `credentials: 'include'`、服务端回 `Access-Control-Allow-Credentials: true` 且来源写具体值，详见 [[CORS]]。
+```mermaid
+sequenceDiagram
+    participant B as 浏览器
+    participant S as 服务端
+    Note over B,S: Cookie + Session
+    B->>S: POST /login 账号密码
+    S->>S: 生成随机 session_id 并存储
+    S-->>B: Set-Cookie: session_id=abc
+    B->>S: GET /order 自动带 Cookie
+    S->>S: 查会话存储还原用户
+    Note over B,S: JWT
+    B->>S: POST /login 账号密码
+    S->>S: 用密钥签发 JWT
+    S-->>B: 返回 token
+    B->>S: Authorization: Bearer token
+    S->>S: 验签 + 校验 exp
+```
 
-> [!warning] 自动携带是 CSRF 的成因
-> 请求只要发往匹配的域就必然带上 Cookie，攻击者无需读到它，借用户浏览器发一个跨站请求就能以用户身份操作。
+</details>
 
-## Cookie 属性与安全
+两条链路在登录后分岔：Session 每次请求查一次存储，JWT 每次请求算一次签名——前者换来「随时可删」，后者换来「不必查库」。
+
+## Cookie：凭证怎么带回来
+
+服务端用响应头 `Set-Cookie` 下发，浏览器按 `Domain` / `Path` 匹配，后续同域请求自动把它附在 `Cookie` 头里——**这是浏览器唯一会自动回传的凭证通道**，Token 要前端手动挂到 `Authorization` 头。
 
 | 属性 | 作用 | 示例 |
 |---|---|---|
@@ -48,16 +67,19 @@ Cookie、Session 与 Token 是 [[HTTP]] 无状态前提下维持用户会话的�
 | `SameSite` | 行为 | 代价 |
 |---|---|---|
 | `Strict` | 跨站请求一律不带 | 外链点进来丢登录态 |
-| `Lax` | 顶级导航带，AJAX 不带 | 推荐默认值 |
+| `Lax` | 顶级导航带，AJAX 不带 | Chrome 80+ 的默认值 |
 | `None` | 跨站一律带，须配 `Secure` | 放弃 CSRF 防护 |
 
-- Chrome 80+ 起未显式声明 `SameSite` 的 Cookie 按 `Lax` 处理；单个 Cookie 约 4KB 上限。
+> [!warning] 自动携带正是 CSRF 的成因
+> 请求只要发往匹配的域就必然带上 Cookie，攻击者不必读到它，借用户浏览器发一个跨站请求就能以用户身份操作。
+
+- 单个 Cookie 约 4KB 上限，只适合装小凭证；跨域要带上它，客户端加 `credentials: 'include'`、服务端回 `Access-Control-Allow-Credentials: true` 且来源写具体值，详见 [[CORS]]。
 
 ## Session：状态留在服务端
 
-Session 是服务端维护的会话状态，Cookie 只传一个无业务含义的 Session ID，服务端拿它查表还原用户。
+Cookie 存在用户机器上、可读可改，把用户信息直接写进去等于让用户自己填身份；Session 的做法是 Cookie 里只放一个无业务含义的随机 ID，用户数据留在服务端。
 
-- 流程：登录校验通过 → 建 Session → 回 `Set-Cookie: session_id=...` → 后续请求带 Cookie，服务端查表取用户数据。
+- 流程：登录校验通过 → 生成 Session ID 并存储（值为用户数据）→ `Set-Cookie` 下发 ID → 后续请求服务端拿 ID 查表还原用户。
 
 | 存储位置 | 优点 | 缺点 |
 |---|---|---|
@@ -65,12 +87,15 @@ Session 是服务端维护的会话状态，Cookie 只传一个无业务含义�
 | [[Redis]] | 高性能、自带过期 | 多一次网络往返 |
 | 数据库 | 持久化 | 性能最低 |
 
-> [!note] 登录后必须换 Session ID
+- Session ID 必须是密码学安全随机数（≥128 bit）：可猜的 ID 等于让人直接登录。
+- 代价：状态在服务端，多节点部署要么共享存储、要么请求黏到同一节点，这是它水平扩展的瓶颈。
+
+> [!note] 登录成功后必须换 Session ID
 > 不换则攻击者可预先构造一个已知 ID 诱导用户登录（会话固定攻击），登录态会落进攻击者手里；校验通过后重新生成 ID 是标准动作。
 
-## Token / JWT：状态写进令牌
+## JWT：状态写进令牌
 
-JWT（JSON Web Token）是自包含令牌，结构为 `Header.Payload.Signature` 三段 Base64URL，服务端验签即可取信，无需查库。
+JWT（JSON Web Token）把用户信息直接写进令牌，服务端只验签就能确认它没被改过，不必查库——代价是令牌一旦签发，服务端不再持有可删的副本。
 
 | 部分 | 内容 | 示例 |
 |---|---|---|
@@ -78,11 +103,11 @@ JWT（JSON Web Token）是自包含令牌，结构为 `Header.Payload.Signature`
 | Payload | 声明：用户 ID、角色、过期时间 | `{"sub":"user123","exp":1700000000}` |
 | Signature | 前两段的签名结果 | `HMAC-SHA256(前两段, secret)` |
 
-- 签名覆盖 `base64url(Header) + "." + base64url(Payload)`，改任何一个字节验签都不过。
+- 签名覆盖 `base64url(Header) + "." + base64url(Payload)`：改任何一个字节，验签都不过。
 
 | 算法 | 密钥形态 | 适用 |
 |---|---|---|
-| HS256 | 对称，签验同一把密钥 | 单服务自签自验，密钥泄露即可伪造 |
+| HS256 | 对称，签验同一把密钥 | 单服务自签自验；密钥泄露即可伪造 |
 | RS256 | 非对称，私钥签、公钥验 | 验签方多于签发方，公钥可公开分发 |
 
 > [!warning] Payload 只是编码不是加密
@@ -94,17 +119,18 @@ JWT（JSON Web Token）是自包含令牌，结构为 `Header.Payload.Signature`
 
 | 维度 | Cookie + Session | Token / JWT |
 |---|---|---|
-| 状态存储 | 服务端 | 令牌自身，服务端无状态 |
+| 状态存储 | 服务端 | 令牌自身 |
 | 携带方式 | `Cookie` 头，浏览器自动 | `Authorization` 头，手动 |
-| 服务端开销 | 每请求查会话存储 | 每请求验签，不查库 |
 | 水平扩展 | 需共享 Session 存储 | 天然支持 |
 | 即时失效 | 删 Session 即刻生效 | 到期前无法自然作废 |
-| 跨域 | 受 `SameSite` 与 CORS 双重限制 | 无额外限制 |
+| 跨域 | 受 `SameSite` 与 CORS 限制 | 无额外限制 |
 | CSRF | 需 `SameSite` 或 CSRF Token | 免疫（前提是不存 Cookie） |
 | 体积 | 几十字节随机 ID | 声明越多越大，每请求都带 |
 | 适用场景 | 传统服务端渲染、同域系统 | 前后端分离、微服务、多端 |
 
 ## Token 存哪：XSS 与 CSRF 的取舍
+
+前端拿到 JWT 后放哪，决定了它暴露在哪种攻击下：
 
 | 存放位置 | 面对 XSS | 面对 CSRF |
 |---|---|---|
@@ -142,7 +168,7 @@ public class JwtInterceptor implements HandlerInterceptor {
 
 Q：Cookie 和 Session 的区别？
 
-A：Cookie 是存在客户端、浏览器自动携带的凭证（单个约 4KB）；Session 是服务端状态，靠 Cookie 里的 Session ID 关联。
+A：两者不同层——Cookie 是浏览器自动回传的载体，Session 是服务端状态；Session 靠 Cookie 里那个随机 ID 才能关联到用户。
 
 Q：JWT 如何实现即时失效？
 
@@ -161,8 +187,8 @@ A：CSRF 依赖浏览器自动携带凭证，而 JWT 要前端手动放进 `Auth
 <details>
 <summary>常见误区 (3条)</summary>
 
+- 误区：Cookie、Session、Token 是三个并列选项。Cookie 是载体，Session / Token 是状态方案，JWT 放 Cookie 里传完全合法。
 - 误区：Token 完全不需要服务端存储。黑名单、Refresh Token 仍需存，消除的只是每连接的会话状态。
 - 误区：JWT 的 Payload 是加密的。它只是 Base64URL，任何人都能读，防篡改靠签名。
-- 误区：`SameSite=Strict` 就绝对安全。它只挡跨站携带，同站 XSS 仍能读走非 `HttpOnly` 的 Cookie。
 
 </details>
