@@ -193,7 +193,7 @@ function wallHTML(n){
       + '<div class="cover-main">'
       + '<p class="cover-issue"><span>Vinea · Knowledge Atlas · '+now.getFullYear()+' 年 '+(now.getMonth()+1)+' 月</span><span class="cover-issue-r">Private Press · No. '+String(now.getMonth()+1).padStart(2,'0')+'</span></p>'
       + '<h1 class="cover-title">'+esc(n.title)+'<span class="cover-dot">.</span></h1>'
-      + (n.excerpt ? '<p class="cover-sub">'+esc(n.excerpt)+'</p>' : '')
+      + ((n.ledeMain||n.excerpt) ? '<p class="cover-sub">'+esc(n.ledeMain||n.excerpt)+'</p>' : '')
       + '</div>'
       + (bandList.length ? '<nav class="cover-mosaic" aria-label="卷索引">'
           + '<span class="cover-mosaic-tag">Volumes · '+bandList.length+'</span>'

@@ -71,7 +71,7 @@ function bindPop(){
     const t = NOTES[a.getAttribute('data-target')];
     if(!t) return;
     a.addEventListener('mouseenter', function(){
-      pop.innerHTML = '<div class="pop-t">'+esc(t.title)+'</div><div class="pop-x">'+esc(t.excerpt||'')+'</div>';
+      pop.innerHTML = '<div class="pop-t">'+esc(t.title)+'</div><div class="pop-x">'+esc(t.ledeMain||t.excerpt||'')+'</div>';
       const r = a.getBoundingClientRect();
       // 水平：贴右边界夹回视口内
       let left = r.left;

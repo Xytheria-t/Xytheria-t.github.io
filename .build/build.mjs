@@ -130,14 +130,36 @@ function parseFm(raw) {
 
 const slugify = (s) => s.trim().toLowerCase().replace(/\s+/g, '-');
 
+function extractLedeMain(body) {
+  // 从 :::lede 块里抽「X 是什么」主行：首块匹配，块内所有非「**标签：** 内容」副行的行拼成一句。
+  // 双链括号剥成纯文本，免得弹窗/墙卡显示 [[xxx]] 字面量。
+  const m = body.match(/^[ \t]*:::lede[ \t]*\r?\n([\s\S]*?)\r?\n[ \t]*:::[ \t]*(?=\r?\n|$)/m);
+  if (!m) return '';
+  const mainLines = [];
+  for (const ln of m[1].split(/\r?\n/)) {
+    const t = ln.trim();
+    if (!t) continue;
+    if (/^\*\*\s*([^*\n]+?)\s*[：:]\s*\*\*\s*(.+)$/.test(t)) continue; // 副行：标签 + 内容
+    mainLines.push(t.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, target, alias) => (alias || target).trim()));
+  }
+  const out = mainLines.join(' ');
+  return out.length > 200 ? out.slice(0, 200) + '…' : out;
+}
 function extractExcerpt(body) {
+  // 墙卡描述从正文抽首段。:::lede 块是定义句专属（→ ledeMain），不进墙卡描述；否则会把字面量 ":::lede" 渲到墙上。
   const clean = body.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '').replace(/^\s*#\s+[^\r\n]*\r?\n?/m, '');
   const lines = clean.split('\n');
   let inCode = false;
+  let skipLede = false;
   for (const line of lines) {
     const trim = line.trim();
     if (trim.startsWith('```')) { inCode = !inCode; continue; }
     if (inCode) continue;
+    if (/^:::lede\b/.test(trim)) { skipLede = true; continue; }
+    if (skipLede) {
+      if (/^:::\s*$/.test(trim)) skipLede = false;
+      continue;
+    }
     // 防御：墙卡描述从原始正文抽，会带未渲染的 [[xxx]]；剥成纯文本，免得墙上挂着死括号
     const t = trim.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, target, alias) => (alias || target).trim());
     if (!t || /^[#>|\-*\d]/.test(t) || t.startsWith('<')) continue;
@@ -654,6 +676,7 @@ for (const [base, r] of Object.entries(raw)) {
     html,
     links,
     excerpt: r.meta.excerpt || extractExcerpt(r.body) || text.slice(0, 90),
+    ledeMain: extractLedeMain(r.body),  // 「X 是什么」主行：小窗/墙卡统一用它（MOC/clip/leetcode 无 lede → 自动空 → 回退 excerpt）
     featured: r.meta.featured || '',
     clip: !!r.meta.clip,                 // 速记笔记标记：渲染时隐藏密度徽标（轻型捕获，密度无意义）
     order: Number(r.meta.order) || 0, // 墙上显式位次，1..n；0 = 未声明，退回权重排序
