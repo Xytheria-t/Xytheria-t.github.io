@@ -7,8 +7,8 @@ aliases: [读写锁, 读写分离锁]
 # ReentrantReadWriteLock
 
 :::lede
-ReentrantReadWriteLock 是 `ReadWriteLock` 的可重入实现，维护一对关联锁：读锁可被多个线程同时持有，写锁独占且与读锁互斥。
-**适用：** 读多写少才划算 · 写多时不比普通互斥锁便宜
+ReentrantReadWriteLock 是 `ReadWriteLock` 的可重入实现，维护一对关联锁：读锁可被多线程共享，写锁独占且与读锁互斥。
+**适用：** 只有读多写少才划算
 :::
 
 ReentrantReadWriteLock 维护一对锁(读共享/写独占) → 读读并发、读写/写写互斥 → 支持写锁降级为读锁 → 适合缓存等读多写少场景。

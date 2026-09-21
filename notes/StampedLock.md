@@ -7,7 +7,8 @@ aliases: [戳记锁, 乐观读锁]
 # StampedLock
 
 :::lede
-StampedLock 是一种基于戳记（stamp）的锁，提供写锁、悲观读锁与乐观读三种模式：每次加锁返回一个 long 型戳记，用它代表并校验这次持锁。
+StampedLock 是基于戳记（stamp）的锁，提供写锁、悲观读锁与乐观读三种模式。
+每次加锁返回一个 long 戳记，用它代表并校验这次持锁。
 **代价：** 不可重入 · 无 Condition · 不实现 `Lock` 接口
 :::
 

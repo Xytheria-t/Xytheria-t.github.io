@@ -7,8 +7,9 @@ order: 2
 # HashMap
 
 :::lede
-HashMap 是基于哈希表的 `Map` 实现，允许 null 键与 null 值，不保证映射顺序、也不做同步：以 `hashCode` 定位桶、以 `equals` 判等，冲突链表过长时树化。
-**分界：** 无序（顺序归 LinkedHashMap / TreeMap）· 非线程安全（并发归 [[ConcurrentHashMap]]）
+HashMap 是基于哈希表的 `Map` 实现，允许 null 键与 null 值，不保证顺序、也不做同步。
+它以 `hashCode` 定位桶、以 `equals` 判等，冲突链过长时树化。
+**分界：** 顺序归 LinkedHashMap / TreeMap · 并发归 [[ConcurrentHashMap]]
 :::
 
 ## 思维链路速查

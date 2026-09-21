@@ -6,8 +6,9 @@ category: mysql
 # MVCC
 
 :::lede
-MVCC（Multi-Version Concurrency Control，多版本并发控制）是通过保留数据历史版本实现并发控制的机制：读访问快照版本、写生成新版本，读写互不阻塞。
-**边界：** 只拆读写冲突 · 写写仍靠锁 · 快照由 undo log 与 ReadView 构造
+MVCC 是靠保留历史版本实现并发控制的机制：读访问快照版本、写生成新版本，读写互不阻塞。
+它只拆读写冲突，写写仍靠锁。
+**构造：** InnoDB 用 undo log 版本链 + ReadView 取快照
 :::
 
 ## 思维链路速查

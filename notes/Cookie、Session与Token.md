@@ -7,8 +7,9 @@ aliases: [Cookie, Session, Token, JWT, 会话管理]
 # Cookie、Session与Token
 
 :::lede
-Cookie 是服务端下发、由浏览器在后续请求中自动回传的一小段数据，是一种客户端凭证载体；Session 与 Token 则是两种凭证校验方案——Session 只发 ID、状态留在服务端查表，Token 把声明与签名自包含进令牌、验签即取信。
-**层级：** Cookie 管「怎么带回来」· Session / Token 管「状态放哪」· 故 JWT 也能塞进 Cookie
+Cookie 是服务端下发、浏览器在后续请求中自动回传的一小段数据，是一种凭证载体。
+Session 与 Token 是两种校验方案：前者只发 ID、状态留在服务端，后者把声明与签名自包含进令牌。
+**层级：** Cookie 管「怎么带回来」· Session / Token 管「状态放哪」
 :::
 
 ## 思维链路速查

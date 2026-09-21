@@ -7,7 +7,7 @@ excerpt: 改一行不必整页落盘：undo log 记「怎么撤销」扛回滚�
 # MySQL 日志
 
 :::lede
-MySQL 日志是为回滚、崩溃恢复与复制而顺序追加写下的几类文件：undo log 记旧值供回滚与快照读，redo log 记物理改动供崩溃重放，binlog 记逻辑变更供复制与恢复。
+MySQL 日志是为回滚、崩溃恢复与复制而顺序追加的几类文件：undo log 记旧值，redo log 记物理改动，binlog 记逻辑变更。
 **分工：** undo 回滚 · redo 崩溃恢复 · binlog 复制与归档
 :::
 

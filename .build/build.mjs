@@ -288,7 +288,7 @@ function buildLede(content) {
   ).join('');
   return (
     '<aside class="lede">' +
-      '<header class="lede-cap"><span class="lede-cap-mark" aria-hidden="true"></span><span class="lede-cap-text">主旨 · Definition</span></header>' +
+      '<header class="lede-cap"><span class="lede-cap-mark" aria-hidden="true"></span><span class="lede-cap-text">主旨</span></header>' +
       (mainHtml ? `<p class="lede-main">${mainHtml}</p>` : '') +
       (subHtml ? `<ul class="lede-sub">${subHtml}</ul>` : '') +
     '</aside>'

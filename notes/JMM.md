@@ -7,8 +7,9 @@ aliases: [happens-before, Java 内存模型, JMM 内存模型]
 # JMM
 
 :::lede
-JMM（Java Memory Model，Java 内存模型）是语言规范定义的并发语义：规定线程与主内存之间如何交互、以及一个线程的写何时对另一个线程可见，判据是 happens-before 关系。
-**分界：** 是规范不是内存布局 · 可见性靠 happens-before 判定 · 由 volatile / 锁 / final 兑现
+JMM 是语言规范为多线程程序规定的语义：描述一个程序可能出现哪些执行行为，判定依据是一组 happens-before 规则。
+它不是内存布局，也不规定具体实现。
+**落地：** happens-before 由 volatile、锁、线程启动与终止等规则给出
 :::
 
 ## 思维链路速查

@@ -7,8 +7,9 @@ aliases: [AbstractQueuedSynchronizer, AQS 框架]
 # AQS
 
 :::lede
-AQS（AbstractQueuedSynchronizer，抽象队列同步器）是用于构建锁与同步器的框架：用一个 volatile 整型状态加一条 FIFO 等待队列，把「获取失败就入队阻塞、释放后唤醒后继」抽成模板方法交给子类实现。
-**分界：** 排队与唤醒是骨架 · state 代表什么归子类 · 它本身不是锁
+AQS 是构建锁与同步器的框架：用一个 volatile 状态量加一条 FIFO 等待队列，把排队与唤醒抽成模板方法。
+state 代表什么由子类定义，它本身不是锁。
+**分界：** 排队唤醒是通用骨架 · state 语义归子类
 :::
 
 ## 思维链路速查
