@@ -95,7 +95,7 @@ function wallHTML(n){
         'ai-agent-skill':'渐进式披露 · 按需加载',
         'mcp':'工具接入协议 · 无状态核心',
         'rag':'检索增强 · 分块与重排',
-        'hermes-自进化':'GEPA 提示进化 · 权重不变',
+        'hermes-自进化':'nudge 影子审查 · 技能库归档',
       },
     },
     '计算机网络': {
