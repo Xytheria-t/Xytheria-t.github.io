@@ -25,7 +25,8 @@
 - mermaid 预处理注入（`direction`/`title`）插到首行图类型声明之前 → `detectType` 失灵全站挂。注入点固定在该行之后。
 - mermaid `classDiagram` 默认 TB + 节点少 → 飞上去/大留白。init 加 `useMaxWidth/nodeSpacing/rankSpacing`，并对无 `direction` 的 classDiagram 自动注入 `LR`。
 - `wallHTML` 改完只跑 `check.mjs` → 它不调 `wallHTML`，布局错也 RAN OK。验渲染须 vm 跑 `wallHTML(NOTES[...])` 取串做断言。
-- 给 `MOC_FACETS` 子 MOC 加子卡只改正文 `[[双链]]` → facet 墙按白名单静默丢未登记 id。三处同步：正文双链 + `ids` + `traits`。
+- 给 `MOC_FACETS` 子 MOC 加子卡只改正文 `[[双链]]` → facet 墙按白名单静默丢未登记 id，`verify-spans` 报 `[slug] ventry=N (links=N+1) MISMATCH`（不报错，易当成既有失败放过）。三处同步：正文双链 + `ids` + `traits`。
+- 用 `git stash` 回滚源文件判断「verify 失败是否既有」→ 结论无效：`_harness` 读的是 `Vinea.html` 产物，源回滚了产物还是新的。回滚后先 `node .build/build.mjs` 再 verify。
 - 加新 category/领域忘改 `build.mjs` 的 `GROUP` → 落到末尾「其他」卷且 `verify-groups` FAIL。`GROUP` 是根墙卷序/卷内序唯一来源（`MOC.md` links 序对根墙无效）。
 - 卷外常驻的域（`clip` / 随问随记）别登记 `GROUP`、别写进 `MOC.md` 双链：只走壳层右上角 `#clipDock`。`build.mjs` 从 `30-tail.html` 现读按钮目标标 `dock`，`verify-groups` 反查它不落任何卷，`verify-health` 据此豁免孤儿/可达（按钮没了或指向改了 → 这两条断言直接红）。
 - 速记（`clip: true`）回挂学科 MOC → 八股墙被速记卡片污染（用户已明确否掉）。速记只挂收件箱 `随问随记`；撤卡片要三处同步（正文双链 + `groups[].ids` + `traits`），只删正文会留死配置。

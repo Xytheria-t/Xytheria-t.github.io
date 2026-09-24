@@ -88,12 +88,14 @@ function wallHTML(n){
         { name:'智能体本体', ids:['ai-agent'] },
         { name:'能力扩展', ids:['ai-agent-skill','mcp'] },
         { name:'知识增强', ids:['rag'] },
+        { name:'自我改进', ids:['hermes-自进化'] },
       ],
       traits: {
         'ai-agent':'循环决策 · 工具闭环',
         'ai-agent-skill':'渐进式披露 · 按需加载',
         'mcp':'工具接入协议 · 无状态核心',
         'rag':'检索增强 · 分块与重排',
+        'hermes-自进化':'GEPA 提示进化 · 权重不变',
       },
     },
     '计算机网络': {
