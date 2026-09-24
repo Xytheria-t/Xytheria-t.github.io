@@ -11,19 +11,9 @@ AOP 是对 OOP 的补充范式：把横跨多个模块的关注点封装成切�
 **Spring 实现：** 运行期动态代理 · 只能拦方法执行
 :::
 
-全篇主心骨只有一句：**增强全挂在代理对象上**——切点从「连接点」里挑出要拦的时机，通知决定拦住后干什么。连接点最易含糊，先把它掰成两层讲清。
-
 ## 动机：横切关注点
 
 **横切关注点**（cross-cutting concern）指事务、日志、权限、限流这类逻辑——不属于任何单一业务方法，却以相同形态散布在大量业务方法里。
-
-```java
-// 抽离前：业务方法背一份事务模板，真正的业务只有 doTransfer 一行
-public void transfer(TransferDto dto) {
-    try { begin(); doTransfer(dto); commit(); } catch (Exception e) { rollback(); throw e; }
-}
-public void transfer(TransferDto dto) { doTransfer(dto); }   // 抽离后：事务由切面织回
-```
 
 抽离后 `transfer` 看似丢了事务，但调用方拿到的是**代理对象**，事务在代理层织回：手写 [[静态代理]] 要为每个目标类配一个代理类；运行期自动生成（见 [[动态代理]]），才做到一次声明、处处生效。
 
@@ -55,8 +45,7 @@ public void transfer(TransferDto dto) { doTransfer(dto); }   // 抽离后：事�
 |---|---|
 | `getSignature()` | 方法签名；强转 `MethodSignature` 拿 Method、参数类型、方法注解 |
 | `getArgs()` | 本次调用的实参数组 `Object[]` |
-| `getTarget()` | 被代理的**原始对象** |
-| `getThis()` | **代理对象**本身；this 与 target 之分野即自调用失效的缩影 |
+| `getTarget()` / `getThis()` | 被代理的**原始对象** / **代理对象**本身；this 与 target 之分野即自调用失效的缩影 |
 | `getKind()` | 连接点类型，Spring 下恒为 `method-execution` |
 
 `ProceedingJoinPoint extends JoinPoint`，只多 `proceed()` / `proceed(newArgs)`——**只有 @Around 能声明**，也是唯一能控制流程的入口。
@@ -70,19 +59,19 @@ public void transfer(TransferDto dto) { doTransfer(dto); }   // 抽离后：事�
 
 ```java
 @Aspect
-@Component                                     // 切面自己仍须是 Spring bean
+@Component                                    // 切面自己仍须是 Spring bean
 public class LogAspect {
-    @Pointcut("execution(* com.demo.service..*.*(..))")    // 起名复用，通知按名引用
-    public void logPointcut() {}
+    @Pointcut("execution(* com.demo.service..*.*(..))")
+    public void logPointcut() {}              // 起名复用，通知按名引用
 
-    @Before("logPointcut()")                   // 四种时机型通知同理，只差注解名与时机
-    public void before(JoinPoint jp) {}        // JoinPoint 必须第一参；jp.getArgs() 拿实参
+    @Before("logPointcut()")                  // 四种时机型通知同理，只差注解名与时机
+    public void before(JoinPoint jp) {}       // JoinPoint 必须第一参
 
-    @Around("logPointcut()")                   // 包裹全程，唯一能控制流程的
+    @Around("logPointcut()")                  // 包裹全程，唯一能控制流程的
     public Object around(ProceedingJoinPoint pjp) throws Throwable {
         long t = System.nanoTime();
-        try { return pjp.proceed(); }          // 放行进链下一环
-        finally { System.out.println(pjp.getSignature().getName() + " cost " + (System.nanoTime() - t) + "ns"); }
+        try { return pjp.proceed(); }         // 放行进链下一环
+        finally { log(pjp.getSignature(), System.nanoTime() - t); }
     }
 }
 ```
@@ -145,7 +134,7 @@ public void before(JoinPoint jp, Log log) { /* 直接读 log.value() */ }
 织入 = 框架化地调 `Proxy.newProxyInstance` / `Enhancer.create`：通知方法是 handler 里的一段增强，`proceed()` 即 `method.invoke(target, args)`（JDK）/ `proxy.invokeSuper(obj, args)`（CGLIB）——机制见 [[动态代理]]。
 
 - 选型：纯 Framework 有接口默认 JDK Proxy、无接口退 CGLIB；**Boot 2.0+ 一律 CGLIB**。
-- 失效根因还是那句：**增强全挂在代理对象上，没走代理就没增强**。
+- 失效根因：**增强全挂在代理对象上，没走代理就没增强**。
 
 | 场景 | 为什么失效 |
 |---|---|
@@ -161,7 +150,7 @@ public void before(JoinPoint jp, Log log) { /* 直接读 log.value() */ }
 
 Q：JoinPoint 和 Pointcut 有什么区别？
 
-A：JoinPoint 是可被拦截的时机（Spring 只有方法执行），是候选全集；Pointcut 是从中筛出子集的表达式，命中的才织入 Advice。
+A：JoinPoint 是可被拦截的时机（Spring 只有方法执行），是候选全集；Pointcut 是筛出子集的表达式，命中的才织入 Advice。
 
 Q：Spring AOP 和 AspectJ 的区别？
 

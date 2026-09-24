@@ -7,7 +7,7 @@ category: java-collection
 
 :::lede
 ConcurrentHashMap 是支持检索全并发、更新高期望并发的线程安全哈希表。
-读路径全程不加锁，写只把互斥压到单个桶，用于取代整表加锁的 Hashtable。
+读不加锁，写只锁单个桶，取代整表加锁的 Hashtable。
 **分界：** 与 Hashtable 差在锁粒度 · 不保证复合操作原子
 :::
 
@@ -21,11 +21,7 @@ ConcurrentHashMap 是支持检索全并发、更新高期望并发的线程安�
 面试问答 | 高频考点 | 复盘
 ```
 
-线程安全终究要靠锁，但锁整张表就退回 Hashtable 了——ConcurrentHashMap 的设计主线是把锁一路缩小：1.7 锁一段，1.8 锁一个桶头，读路径干脆不加锁，由 volatile 兜住可见性。
-
 ## 结构演进：1.7 分段锁 → 1.8 桶级锁
-
-Java 7 把表横向切成若干 **Segment（段）**，每段自带一把锁——写不同段互不阻塞，能同时写的线程数叫**并发度**；Java 8 抛掉分段，回到单张大表，把锁缩到每个桶的头节点。
 
 | 维度 | Java 7：Segment 分段锁 | Java 8：CAS + synchronized |
 |---|---|---|
@@ -35,7 +31,7 @@ Java 7 把表横向切成若干 **Segment（段）**，每段自带一把锁—�
 | 哈希定位 | 先定位段、再定位桶，两次哈希 | spread(h) 一次定位桶（结构同 [[HashMap]]） |
 
 > [!tip] 为什么 1.8 弃用分段锁
-> 锁已细到桶级，单桶冲突少、持锁极短，synchronized 经锁升级优化后的低竞争路径足够轻（见 [[synchronized]]）；而每段一把 ReentrantLock 要多养一份 AQS 队列对象，表越大这笔内存越不划算。
+> 锁已细到桶级、持锁极短，synchronized 锁升级后的低竞争路径足够轻（见 [[synchronized]]）；每段一把 ReentrantLock 还要多养一份 AQS 队列对象。
 
 ## 写路径：put 的五步决策
 
@@ -52,42 +48,36 @@ ForwardingNode | helpTransfer 协助迁移 | 扩容中
 
 ```mermaid
 flowchart TD
-  S([put(key, value)]) --> H["spread(h) 定位桶"]
-  H --> E{"桶为空?"}
-  E -->|是| CAS["CAS 放入首节点"]
-  E -->|否| M{"头节点 hash == MOVED?"}
-  M -->|是| HT["helpTransfer 协助扩容后重试"] --> H
+  S([put]) --> H["spread(h) 定位桶"]
+  H --> E{"桶空?"}
+  E -->|是| CAS["CAS 放首节点"]
+  E -->|否| M{"hash == MOVED?"}
+  M -->|是| HT["helpTransfer 重试"] --> H
   M -->|否| LK["synchronized 锁头节点"]
-  LK --> W["遍历链表/红黑树：追加或覆盖"]
-  W --> T{"链表 ≥ 8 且表长 ≥ 64?"}
-  T -->|是| TREE["树化为红黑树"]
+  LK --> W["遍历链表/树：追加或覆盖"]
+  W --> T{"链表≥8 且表长≥64?"}
+  T -->|是| TREE["树化"]
   T -->|否| AC["addCount 计数"]
   TREE --> AC
-  AC --> X{"元素数达扩容阈值?"}
-  X -->|是| RS["触发扩容 transfer"]
+  AC --> X{"达扩容阈值?"}
+  X -->|是| RS["扩容 transfer"]
   X -->|否| D([结束])
   RS --> D
 ```
 
 </details>
 
-流程里的专名：
-
-- **spread(h)**：`(h ^ (h >>> 16)) & 0x7fffffff`——高低 16 位异或让高位参与寻址（同 HashMap 思路），抹掉符号位保证 hash 非负，因为负数被挪作特殊标记。
+- **spread(h)**：`(h ^ (h >>> 16)) & 0x7fffffff`——高低 16 位异或让高位参与寻址，抹掉符号位保证 hash 非负，负数被挪作特殊标记。
 - **ForwardingNode**：hash = MOVED(-1) 的占位节点，插在「已迁走」的桶头上，读它转发去新表、写它先帮忙迁移。
-- **树化**：插入后链上已有 8 个节点（源码 `binCount >= TREEIFY_THRESHOLD - 1`，即正在插入第 9 个）才调 `treeifyBin`，且还要表长 ≥ 64，否则优先扩容稀释冲突——阈值依据与 [[HashMap]] 相同（泊松分布，概率约千万分之六）。
-- **扩容并发**：transfer 按步长（stride，最小 16 个桶）把桶分段「承包」给线程，各迁各的；sizeCtl 负值编码参与线程数。
+- **树化**：插入后链上已有 8 个节点（`binCount >= TREEIFY_THRESHOLD - 1`）才调 `treeifyBin`，且表长 ≥ 64，否则优先扩容——阈值依据同 [[HashMap]]（泊松分布，约千万分之六）。
+- **扩容并发**：transfer 按步长（stride，最小 16 个桶）分段承包给线程；sizeCtl 负值编码参与线程数。
 
-| sizeCtl 取值 | 含义 |
-|---|---|
-| 未初始化且 > 0 | 初始容量建议 |
-| = -1 | 正在初始化（CAS 抢到 -1 的线程建表，其余让步，表只建一次） |
-| < -1 | 正在扩容，负值编码参与迁移的线程数 |
-| 初始化后 > 0 | 下次扩容阈值 ≈ 容量 × 0.75 |
+> [!note] sizeCtl 编码
+> > 0：初始化前是初始容量建议、初始化后是扩容阈值（≈容量 × 0.75）；= -1：正在初始化（表只建一次）；< -1：正在扩容，负值编码参与迁移线程数。
 
 ## 读路径：get 为什么全程无锁
 
-可见性由三个 volatile 兜住，读线程既不加锁也不 CAS 重试：
+三个 volatile 兜住可见性，读线程不加锁也不 CAS 重试：
 
 | 读线程要拿什么 | 靠什么保证可见 |
 |---|---|
@@ -95,8 +85,8 @@ flowchart TD
 | 节点的值 Node.val | volatile 写 |
 | 节点的后继 Node.next | volatile 写（链表追加/树化改链不丢节点） |
 
-- volatile 写 happens-before 后续的 volatile 读（语义见 [[volatile]] 与 [[JMM]]），写线程落的值读线程立刻可见；扩容期间读到 ForwardingNode 就顺着它去新表找，迁移中的桶读不丢、不挡。
-- **树桶读的是 `TreeBin`**（hash = TREEBIN(-2)）：它不存值，只持有树的根并维护一条链表供遍历，写用内部 `lockState` 做读写协调，读者因此不必阻塞。
+- volatile 写 happens-before 后续的 volatile 读（见 [[volatile]] 与 [[JMM]]）；扩容期间读到 ForwardingNode 就顺它去新表找，迁移中的桶读不丢、不挡。
+- **树桶读的是 `TreeBin`**（hash = TREEBIN(-2)）：不存值，只持树根并维护一条遍历链表，写用 `lockState` 协调，读者不必阻塞。
 - `get` 遇扩容只转发不等待，**写不是**：扩容中的写要先 `helpTransfer` 协助搬桶再重试，同桶写仍互斥。
 
 > [!warning] 无锁读 = 弱一致读
@@ -104,7 +94,7 @@ flowchart TD
 
 ## 计数：size() 为什么是近似值
 
-所有写都往一个计数器上 CAS，高并发下会撞成热点（自旋问题见 [[CAS 与原子类]]），CHM 因此搬来了 LongAdder 的**分桶计数**：
+所有写都 CAS 同一个计数器，高并发会撞成热点（见 [[CAS 与原子类]]），CHM 因此改用 LongAdder 式分桶计数：
 
 ```chain
 写入计数 | 先 CAS baseCount | 冲突
@@ -112,33 +102,28 @@ flowchart TD
 读取 size | baseCount + Σ cells 求和 | 近似
 ```
 
-- **baseCount** 是基数，**CounterCell[]** 是分桶数组（`@Contended` 填充防伪共享），写冲突越大、cell 越多。
-- size() 是求和瞬间的近似值，并发修改中不保证精确；要长整型防溢出用 mappingCount()；要精确计数就换外部同步或专门的计数结构。
+- **baseCount** 是基数，**CounterCell[]** 是分桶数组（`@Contended` 填充防伪共享），冲突越大、cell 越多。
+- size() 是求和瞬间的近似值；防溢出用 mappingCount()，要精确计数需外部同步。
 
 ## null 禁令与弱一致迭代
 
-- **key/value 都不许 null**：并发下 `get(k)` 返回 null 有二义性——分不清「键不存在」还是「存了 null」；单线程 HashMap 可以补一次 containsKey，并发下这是 check-then-act，中间键可能被别的线程改掉，补判也不可靠，干脆禁止。
-- 迭代器是**弱一致**（weakly consistent）：保证遍历到「创建时刻已存在」的元素，之后的增删可能看到可能看不到，但**不抛** ConcurrentModificationException（HashMap 是 fail-fast，一改就抛）。
+- **key/value 都不许 null**：并发下 `get(k)` 返回 null 有二义性——分不清「键不存在」还是「存了 null」；单线程 HashMap 能补 containsKey，并发下是 check-then-act，中间键可能被改掉，干脆禁止。
+- 迭代器是**弱一致**（weakly consistent）：保证遍历到「创建时刻已存在」的元素，之后的增删可能看到可能看不到，但**不抛** ConcurrentModificationException。
 
 | 维度 | HashMap | Hashtable | ConcurrentHashMap |
 |---|---|---|---|
-| 线程安全 | 否 | 方法级 synchronized，锁全表 | 桶级锁 + CAS |
+| 线程安全 / 并发性能 | 否 / —— | 方法级 synchronized 锁全表，几乎串行 | 桶级锁 + CAS，写锁单桶、读无锁 |
 | null key/value | 允许 | 禁止 | 禁止 |
-| 并发性能 | —— | 全表互斥，几乎串行 | 写锁单桶，读无锁 |
 | 迭代语义 | fail-fast | fail-fast | 弱一致 |
 
 ## 落地：复合操作的正确写法
 
-put/get 各自原子，但「先 get 判断、再 put」是两步，中间可能被插队——计数、去重这类逻辑必须用锁同一桶头的整段原子方法。
+put/get 各自原子，但「先 get 判断、再 put」是两步，中间可能被插队——计数、去重必须用锁同一桶头的整段原子方法。
 
 > [!danger] computeIfAbsent 里禁止递归更新同一张表
-> 计算函数内部再改同一张表就是递归更新：JDK 8 **不做检测**，两个 key 落在同一桶时可能把桶结构改坏甚至死循环、跨桶循环依赖则可能死锁；JDK 9+ 会检测并直接抛 `IllegalStateException: Recursive update`。映射函数只做「算出值」这一件事。
+> 计算函数内再改同一张表即递归更新：JDK 8 **不做检测**，两个 key 落在同一桶时可能改坏桶结构甚至死循环、跨桶循环依赖则可能死锁；JDK 9+ 会检测并直接抛 `IllegalStateException: Recursive update`。
 
 ```java
-// 反例：check-then-act，两步之间可能被其他线程改掉
-if (!map.containsKey(k)) { map.put(k, v); }
-
-// 正例：单调用原子
 map.putIfAbsent(k, v);
 map.computeIfAbsent(k, key -> expensiveLoad(key));
 map.merge(k, 1, Integer::sum);          // 并发计数
@@ -149,11 +134,11 @@ map.merge(k, 1, Integer::sum);          // 并发计数
 
 Q：多线程怎么一起扩容？
 
-A：transfer 按步长（最小 16 个桶）分段承包给线程，各迁各的；迁完的桶头放 ForwardingNode，其他线程读到它要么转发读、要么协助迁，sizeCtl 负值记录参与线程数。
+A：transfer 按步长（最小 16 个桶）分段承包，迁完的桶头放 ForwardingNode，读到它则转发读或协助迁。
 
 Q：size() 准确吗？
 
-A：不保证。它是 baseCount 加各 CounterCell 的瞬时求和（LongAdder 思路），并发写时只是近似值；要精确需外部同步。
+A：不保证，是 baseCount + Σ CounterCell 的瞬时求和（LongAdder 思路），并发写时只是近似值。
 
 Q：ConcurrentHashMap 能替代 Hashtable 吗？
 
@@ -165,7 +150,7 @@ A：能。Hashtable 只为兼容旧 API 保留，`Collections.synchronizedMap` �
 <summary>常见误区 (3条)</summary>
 
 - 误区：默认并发度 16 是 1.8 的概念。16 是 1.7 的段数；1.8 并发度取决于桶数，构造参数只当初始容量提示。
-- 误区：无并发也该用 ConcurrentHashMap。单线程下 volatile 读和 CAS 有额外成本，HashMap 更快，按并发需求选。
+- 误区：无并发也该用 ConcurrentHashMap。单线程下 volatile 读和 CAS 有额外成本，HashMap 更快。
 - 误区：get 读到「旧一拍」的值是实现缺陷。弱一致是设计语义，可见性由 volatile 保证，写完成必可见。
 
 </details>

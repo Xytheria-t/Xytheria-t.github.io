@@ -130,20 +130,45 @@ function parseFm(raw) {
 
 const slugify = (s) => s.trim().toLowerCase().replace(/\s+/g, '-');
 
-function extractLedeMain(body) {
-  // 从 :::lede 块里抽「X 是什么」主行：首块匹配，块内所有非「**标签：** 内容」副行的行拼成一句。
-  // 双链括号剥成纯文本，免得弹窗/墙卡显示 [[xxx]] 字面量。
+// 卡片/墙卡文本一律剥成纯文本：复习靠口述回忆，卡面上不该出现 markdown 标记或 [[双链]] 括号。
+function plainify(s) {
+  return String(s || '')
+    .replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, target, alias) => (alias || target).trim())
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+// 32 位 FNV-1a：复习卡片 id 用「内容 hash」而非序号 —— 改笔记顺序不丢复习进度，改了内容才重学（合理）。
+function h32(s) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return (h >>> 0).toString(36);
+}
+const cut = (s, n) => (s.length > n ? s.slice(0, n) + '…' : s);
+
+function extractLedeBlock(body) {
+  // :::lede 块 → { main: 主行, subs: [{l,t}] }。主行 = 块内所有非「**标签：** 内容」副行的行拼成一句。
+  // 复习卡片与墙卡共用：墙卡只取 main，主题卡要 main + subs（边界/载体）一起当框架。
   const m = body.match(/^[ \t]*:::lede[ \t]*\r?\n([\s\S]*?)\r?\n[ \t]*:::[ \t]*(?=\r?\n|$)/m);
-  if (!m) return '';
-  const mainLines = [];
+  if (!m) return null;
+  const mainLines = [], subs = [];
   for (const ln of m[1].split(/\r?\n/)) {
     const t = ln.trim();
     if (!t) continue;
-    if (/^\*\*\s*([^*\n]+?)\s*[：:]\s*\*\*\s*(.+)$/.test(t)) continue; // 副行：标签 + 内容
-    mainLines.push(t.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, target, alias) => (alias || target).trim()));
+    const sm = t.match(/^\*\*\s*([^*\n]+?)\s*[：:]\s*\*\*\s*(.+)$/);
+    if (sm) subs.push({ l: sm[1].trim(), t: plainify(sm[2]) });
+    else mainLines.push(t);
   }
-  const out = mainLines.join(' ');
-  return out.length > 200 ? out.slice(0, 200) + '…' : out;
+  return { main: plainify(mainLines.join(' ')), subs };
+}
+function extractLedeMain(body) {
+  // 墙卡 / 封面用的「X 是什么」单句：双链括号与内联标记已剥成纯文本，免得显示 [[xxx]] 或 ** 字面量。
+  const b = extractLedeBlock(body);
+  if (!b || !b.main) return '';
+  return b.main.length > 200 ? b.main.slice(0, 200) + '…' : b.main;
 }
 function extractExcerpt(body) {
   // 墙卡描述从正文抽首段。:::lede 块是定义句专属（→ ledeMain），不进墙卡描述；否则会把字面量 ":::lede" 渲到墙上。
